@@ -1,0 +1,271 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+}
+
+.header {
+  height: 60px;
+  background: #1f2937;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+h1 {
+font-size: 24px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-button,
+.login-button,
+.menu-button,
+.add-location-button,
+.edit-location-button,
+.save-location-button,
+.delete-location-button {
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: background 0.2s ease;
+}
+
+.logout-button {
+  background: #ef4444;
+  color: white;
+}
+
+.logout-button:hover {
+  background: #dc2626;
+}
+
+.header-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.action-logo {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.menu {
+  width: 250px;
+  background: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 10px;
+}
+
+.menu-button {
+  background: white;
+  color: #111827;
+  text-align: left;
+}
+
+.menu-button:hover,
+.menu-button.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.data {
+  flex: 1;
+  padding: 24px;
+  background: white;
+}
+
+.details {
+  width: 350px;
+  padding: 24px;
+  background: #f9fafb;
+  border-left: 1px solid #e5e7eb;
+}
+
+.footer {
+  height: 50px;
+  background: #111827;
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.login-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.login-card {
+  width: 360px;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-card h2 {
+  margin: 0 0 10px;
+}
+
+.login-label {
+  font-weight: bold;
+}
+
+.login-card input {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.login-error {
+  color: #dc2626;
+  margin: 0;
+}
+
+.login-button {
+  margin-top: 8px;
+  background: #2563eb;
+  color: white;
+}
+
+.login-button:hover {
+  background: #1d4ed8;
+}
+
+.locations-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.add-location-button {
+  align-self: flex-start;
+  background: #2563eb;
+  color: white;
+}
+
+.add-location-button:hover {
+  background: #1d4ed8;
+}
+
+.locations-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.locations-table thead {
+    font-size: 12px;
+}
+
+.locations-table th,
+.locations-table td {
+  border-bottom: 1px solid #d1d5db;
+  padding: 10px;
+  text-align: left;
+}
+
+td.location-table-row-action,
+th.location-table-row-action {
+    text-align: right;
+}
+
+.edit-location-button,
+.save-location-button {
+  background: #10b981;
+  color: white;
+}
+
+.edit-location-button:hover,
+.save-location-button:hover {
+  background: #059669;
+}
+
+.location-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-label {
+  font-size: 14px;
+}
+
+.form-value {
+  min-height: 38px;
+  padding: 8px 0;
+}
+
+.location-form input {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.detail-message {
+  color: #2563eb;
+  font-size: 14px;
+}
+
+.delete-location-button {
+  margin-left: 6px;
+  background: #ef4444;
+  color: white;
+}
+
+.delete-location-button:hover {
+  background: #dc2626;
+}
+
+.user-info {
+  font-size: 14px;
+  color: #e5e7eb;
+  margin-right: 8px;
+}
