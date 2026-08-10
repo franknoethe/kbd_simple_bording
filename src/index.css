@@ -249,6 +249,12 @@ th.location-table-row-action {
   border-radius: 6px;
 }
 
+.location-form select {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
 .detail-message {
   color: #2563eb;
   font-size: 14px;
@@ -268,4 +274,11 @@ th.location-table-row-action {
   font-size: 14px;
   color: #e5e7eb;
   margin-right: 8px;
+}
+
+.menu,
+.data,
+.details {
+  min-height: 0;
+  overflow-y: auto;
 }
