@@ -117,9 +117,9 @@ def get_employees():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
              SELECT id, first_name, last_name, email_business AS email,
-                 NULL::text AS department, username, location_id, job_id,
+                 NULLIF(BTRIM(department), '') AS department, username, location_id, job_id,
                  role_id, function_id
-            FROM employees ORDER BY id ASC
+            FROM employees ORDER BY last_name asc
         ''')
         employees = cursor.fetchall()
         return jsonify({'success': True, 'employees': [dict(emp) for emp in employees]})
@@ -178,16 +178,17 @@ def create_employee():
         
         cursor.execute('''
             INSERT INTO employees
-            (first_name, last_name, email_business, username, password_hash,
+            (first_name, last_name, email_business, department, username, password_hash,
              location_id, job_id, role_id, function_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, first_name, last_name, email_business AS email,
-                      NULL::text AS department, username, location_id, job_id,
-                      role_id, function_id
+                      department, username, location_id, job_id, role_id,
+                      function_id
         ''', (
             data.get('first_name', ''),
             data.get('last_name', ''),
             data.get('email', ''),
+            data.get('department', ''),
             data.get('username', ''),
             data.get('password', ''),
             data.get('location_id', 0),
@@ -223,6 +224,7 @@ def update_employee(employee_id):
         cursor.execute('''
             UPDATE employees 
             SET first_name = %s, last_name = %s, email_business = %s,
+                department = %s,
                 username = %s, password_hash = %s, location_id = %s,
                 job_id = %s, role_id = %s, function_id = %s
             WHERE id = %s
@@ -230,6 +232,7 @@ def update_employee(employee_id):
             data.get('first_name', ''),
             data.get('last_name', ''),
             data.get('email', ''),
+            data.get('department', ''),
             data.get('username', ''),
             data.get('password', ''),
             data.get('location_id', 0),
