@@ -31,14 +31,14 @@
           </tr>
         </thead>
         <tbody id="employees-tbody">
-          <tr><td colspan="7" style="text-align: center;">Lädt...</td></tr>
+          <tr><td colspan="7" class="table-message">Lädt...</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <!-- Modal für Bearbeitung/Erstellung -->
-  <div id="modal-overlay" class="modal-overlay" style="display:none;">
+  <div id="modal-overlay" class="modal-overlay is-hidden">
     <div class="modal">
       <div class="modal-header">
         <h2 id="modal-title">Neuer Mitarbeiter</h2>
@@ -113,112 +113,6 @@
     </div>
   </div>
 
-  <style>
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal {
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      min-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #666;
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .secondary-btn {
-      background: #f0f0f0;
-      color: #333;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .modal-actions button {
-      flex: 1;
-    }
-
-    .action-btns {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .edit-btn, .delete-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .edit-btn {
-      background: #007bff;
-      color: white;
-    }
-
-    .delete-btn {
-      background: #dc3545;
-      color: white;
-    }
-
-    select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-  </style>
-
   <script>
     let currentEditingId = null;
 
@@ -269,12 +163,12 @@
           document.getElementById('employee-count').textContent = `${employees.length} Mitarbeiter`;
         } else {
           document.getElementById('employees-tbody').innerHTML =
-            `<tr><td colspan="7" style="text-align: center; color: red;">${data.message || 'Fehler beim Laden'}</td></tr>`;
+            `<tr><td colspan="7" class="table-message table-message-error">${data.message || 'Fehler beim Laden'}</td></tr>`;
         }
       } catch (error) {
         console.error('Error loading employees:', error);
         document.getElementById('employees-tbody').innerHTML = 
-          '<tr><td colspan="7" style="text-align: center; color: red;">Fehler beim Laden</td></tr>';
+          '<tr><td colspan="7" class="table-message table-message-error">Fehler beim Laden</td></tr>';
       }
     }
 
@@ -282,7 +176,7 @@
       const tbody = document.getElementById('employees-tbody');
       
       if (employees.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Keine Mitarbeiter gefunden</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="table-message">Keine Mitarbeiter gefunden</td></tr>';
         return;
       }
 
