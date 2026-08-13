@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Boarding Dashboard{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Overview</p>
+      <h1>Onboarding Dashboard</h1>
+    </div>
+    <button class="primary-btn">New candidate</button>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total Employees</span>
+      <strong>{{ stats.total }}</strong>
+      <small>Active onboarding</small>
+    </article>
+    <article class="stat-card accent-blue">
+      <span>Approved</span>
+      <strong>{{ stats.approved }}</strong>
+      <small>Ready to start</small>
+    </article>
+    <article class="stat-card accent-gold">
+      <span>In Progress</span>
+      <strong>{{ stats.in_progress }}</strong>
+      <small>Currently onboarded</small>
+    </article>
+    <article class="stat-card accent-red">
+      <span>Pending</span>
+      <strong>{{ stats.pending }}</strong>
+      <small>Needs action</small>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Candidate overview</h2>
+      <span>Average progress: {{ stats.avg_progress }}%</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Start Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees %}
+            <tr>
+              <td>
+                <div class="person-cell">
+                  <span class="avatar">{{ employee.name.split(' ')[0][0] }}{{ employee.name.split(' ')[1][0] }}</span>
+                  <div>
+                    <strong>{{ employee.name }}</strong>
+                    <small>{{ employee.location }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ employee.department }}</td>
+              <td>{{ employee.role }}</td>
+              <td>
+                <span class="badge badge-{{ employee.status }}">{{ status_labels[employee.status] }}</span>
+              </td>
+              <td>
+                <div class="progress-block">
+                  <div class="progress-bar">
+                    <span style="width: {{ employee.progress }}%"></span>
+                  </div>
+                  <small>{{ employee.progress }}%</small>
+                </div>
+              </td>
+              <td>{{ employee.start_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

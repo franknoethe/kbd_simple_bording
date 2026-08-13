@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}KBD Simple Boarding{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">K</span>
+          <div>
+            <strong>KBD</strong>
+            <small>Simple Boarding</small>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a class="active" href="/">Dashboard</a>
+          <a href="/employees">Mitarbeiter</a>
+          <a href="/api/employees">API</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

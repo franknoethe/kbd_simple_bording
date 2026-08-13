@@ -1,0 +1,423 @@
+{% extends 'base.html' %}
+
+{% block title %}Mitarbeiter CRUD{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Management</p>
+      <h1>Mitarbeiter</h1>
+    </div>
+    <button class="primary-btn" id="add-employee-btn">Neuer Mitarbeiter</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Mitarbeiterliste</h2>
+      <span id="employee-count">0 Mitarbeiter</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Vorname</th>
+            <th>Nachname</th>
+            <th>E-Mail</th>
+            <th>Abteilung</th>
+            <th>Benutzername</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="employees-tbody">
+          <tr><td colspan="7" style="text-align: center;">Lädt...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal für Bearbeitung/Erstellung -->
+  <div id="modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Neuer Mitarbeiter</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="employee-form" onsubmit="handleFormSubmit(event)">
+        <input type="hidden" id="employee-id">
+        
+        <div class="form-group">
+          <label for="first-name">Vorname:</label>
+          <input type="text" id="first-name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="last-name">Nachname:</label>
+          <input type="text" id="last-name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">E-Mail:</label>
+          <input type="email" id="email">
+        </div>
+
+        <div class="form-group">
+          <label for="department">Abteilung:</label>
+          <input type="text" id="department">
+        </div>
+
+        <div class="form-group">
+          <label for="username">Benutzername:</label>
+          <input type="text" id="username">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Passwort:</label>
+          <input type="password" id="password">
+        </div>
+
+        <div class="form-group">
+          <label for="location-id">Standort:</label>
+          <select id="location-id" required>
+            <option value="">Standort auswählen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="job-id">Job:</label>
+          <select id="job-id" required>
+            <option value="">Job auswählen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="role-id">Rolle:</label>
+          <select id="role-id" required>
+            <option value="">Rolle auswählen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="function-id">Funktion:</label>
+          <select id="function-id" required>
+            <option value="">Funktion auswählen</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary-btn">Speichern</button>
+          <button type="button" class="secondary-btn" onclick="closeModal()">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      min-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .secondary-btn {
+      background: #f0f0f0;
+      color: #333;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .edit-btn, .delete-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .edit-btn {
+      background: #007bff;
+      color: white;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  </style>
+
+  <script>
+    let currentEditingId = null;
+
+    // Load employees on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadEmployeeOptions();
+      loadEmployees();
+      document.getElementById('add-employee-btn').addEventListener('click', openNewEmployeeModal);
+    });
+
+    async function loadEmployeeOptions() {
+      try {
+        const response = await fetch('/api/employee-options');
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Referenzdaten konnten nicht geladen werden.');
+        }
+
+        fillSelect('location-id', data.locations, 'Standort auswählen');
+        fillSelect('job-id', data.jobs, 'Job auswählen');
+        fillSelect('role-id', data.roles, 'Rolle auswählen');
+        fillSelect('function-id', data.functions, 'Funktion auswählen');
+      } catch (error) {
+        console.error('Error loading employee options:', error);
+      }
+    }
+
+    function fillSelect(elementId, items, placeholder) {
+      const select = document.getElementById(elementId);
+      select.innerHTML = `<option value="">${placeholder}</option>`;
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name;
+        select.appendChild(option);
+      });
+    }
+
+    async function loadEmployees() {
+      try {
+        const response = await fetch('/api/employees');
+        const data = await response.json();
+
+        if (data.success) {
+          const employees = data.employees || [];
+          displayEmployees(employees);
+          document.getElementById('employee-count').textContent = `${employees.length} Mitarbeiter`;
+        } else {
+          document.getElementById('employees-tbody').innerHTML =
+            `<tr><td colspan="7" style="text-align: center; color: red;">${data.message || 'Fehler beim Laden'}</td></tr>`;
+        }
+      } catch (error) {
+        console.error('Error loading employees:', error);
+        document.getElementById('employees-tbody').innerHTML = 
+          '<tr><td colspan="7" style="text-align: center; color: red;">Fehler beim Laden</td></tr>';
+      }
+    }
+
+    function displayEmployees(employees) {
+      const tbody = document.getElementById('employees-tbody');
+      
+      if (employees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Keine Mitarbeiter gefunden</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = employees.map(emp => `
+        <tr>
+          <td>${emp.id}</td>
+          <td>${emp.first_name}</td>
+          <td>${emp.last_name}</td>
+          <td>${emp.email || '-'}</td>
+          <td>${emp.department || '-'}</td>
+          <td>${emp.username || '-'}</td>
+          <td>
+            <div class="action-btns">
+              <button class="edit-btn" onclick="openEditModal(${emp.id})">Edit</button>
+              <button class="delete-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openNewEmployeeModal() {
+      currentEditingId = null;
+      document.getElementById('modal-title').textContent = 'Neuer Mitarbeiter';
+      document.getElementById('employee-form').reset();
+      document.getElementById('employee-id').value = '';
+      document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    async function openEditModal(employeeId) {
+      try {
+        const response = await fetch(`/api/employees`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const employee = data.employees.find(e => e.id === employeeId);
+          if (employee) {
+            currentEditingId = employeeId;
+            document.getElementById('modal-title').textContent = 'Mitarbeiter bearbeiten';
+            document.getElementById('employee-id').value = employee.id;
+            document.getElementById('first-name').value = employee.first_name;
+            document.getElementById('last-name').value = employee.last_name;
+            document.getElementById('email').value = employee.email || '';
+            document.getElementById('department').value = employee.department || '';
+            document.getElementById('username').value = employee.username || '';
+            document.getElementById('password').value = '';
+            document.getElementById('location-id').value = employee.location_id || 0;
+            document.getElementById('job-id').value = employee.job_id || 0;
+            document.getElementById('role-id').value = employee.role_id || 0;
+            document.getElementById('function-id').value = employee.function_id || 0;
+            document.getElementById('modal-overlay').style.display = 'flex';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading employee:', error);
+      }
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const employeeData = {
+        first_name: document.getElementById('first-name').value,
+        last_name: document.getElementById('last-name').value,
+        email: document.getElementById('email').value,
+        department: document.getElementById('department').value,
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        location_id: Number(document.getElementById('location-id').value),
+        job_id: Number(document.getElementById('job-id').value),
+        role_id: Number(document.getElementById('role-id').value),
+        function_id: Number(document.getElementById('function-id').value)
+      };
+
+      try {
+        if (currentEditingId) {
+          // Update
+          const response = await fetch(`/api/employees/${currentEditingId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(employeeData)
+          });
+          const data = await response.json();
+          if (data.success) {
+            alert('Mitarbeiter aktualisiert');
+            closeModal();
+            loadEmployees();
+          } else {
+            alert('Fehler: ' + data.message);
+          }
+        } else {
+          // Create
+          const response = await fetch('/api/employees', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(employeeData)
+          });
+          const data = await response.json();
+          if (data.success) {
+            alert('Mitarbeiter erstellt');
+            closeModal();
+            loadEmployees();
+          } else {
+            alert('Fehler: ' + data.message);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving employee:', error);
+        alert('Fehler beim Speichern');
+      }
+    }
+
+    async function deleteEmployee(employeeId) {
+      if (!confirm('Diesen Mitarbeiter wirklich löschen?')) return;
+
+      try {
+        const response = await fetch(`/api/employees/${employeeId}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert('Mitarbeiter gelöscht');
+          loadEmployees();
+        } else {
+          alert('Fehler: ' + data.message);
+        }
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        alert('Fehler beim Löschen');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').style.display = 'none';
+      currentEditingId = null;
+    }
+  </script>
+{% endblock %}
