@@ -83,5 +83,23 @@
         </tbody>
       </table>
     </div>
+
+    {% if total_employees > 800 %}
+      <div class="table-pagination" aria-label="Tabellennavigation">
+        {% if current_page > 1 %}
+          <a class="pagination-btn" href="/?page={{ current_page - 1 }}" aria-label="Vorheriges Datenpaket">←</a>
+        {% else %}
+          <span class="pagination-btn pagination-btn-disabled" aria-disabled="true">←</span>
+        {% endif %}
+
+        <span class="pagination-info">Datenpaket {{ current_page }} von {{ total_pages }}</span>
+
+        {% if current_page < total_pages %}
+          <a class="pagination-btn" href="/?page={{ current_page + 1 }}" aria-label="Nächstes Datenpaket">→</a>
+        {% else %}
+          <span class="pagination-btn pagination-btn-disabled" aria-disabled="true">→</span>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
 {% endblock %}

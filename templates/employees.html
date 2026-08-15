@@ -22,10 +22,25 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Vorname</th>
-            <th>Nachname</th>
+            <th>
+              <span class="sortable-heading">Vorname <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="first_name" data-sort-direction="asc" aria-label="Vorname aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="first_name" data-sort-direction="desc" aria-label="Vorname absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th>
+              <span class="sortable-heading">Nachname <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="last_name" data-sort-direction="asc" aria-label="Nachname aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="last_name" data-sort-direction="desc" aria-label="Nachname absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
             <th>E-Mail</th>
-            <th>Abteilung</th>
+            <th>
+              <span class="sortable-heading">Abteilung <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="asc" aria-label="Abteilung aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="desc" aria-label="Abteilung absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
             <th>Benutzername</th>
             <th>Aktionen</th>
           </tr>
@@ -34,6 +49,12 @@
           <tr><td colspan="7" class="table-message">Lädt...</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div id="employee-pagination" class="table-pagination is-hidden" aria-label="Mitarbeiternavigation">
+      <button class="pagination-btn" id="employee-prev-page" type="button" aria-label="Vorheriges Datenpaket">←</button>
+      <span class="pagination-info" id="employee-page-info"></span>
+      <button class="pagination-btn" id="employee-next-page" type="button" aria-label="Nächstes Datenpaket">→</button>
     </div>
   </section>
 
@@ -114,13 +135,28 @@
   </div>
 
   <script>
+    let employees = [];
     let currentEditingId = null;
+    let employeePage = 1;
+    const employeePageSize = 800;
+    let employeeSortKey = null;
+    let employeeSortDirection = 'asc';
 
     // Load employees on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadEmployeeOptions();
       loadEmployees();
       document.getElementById('add-employee-btn').addEventListener('click', openNewEmployeeModal);
+      document.getElementById('employee-prev-page').addEventListener('click', () => changeEmployeePage(-1));
+      document.getElementById('employee-next-page').addEventListener('click', () => changeEmployeePage(1));
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.addEventListener('click', () => {
+          employeeSortKey = button.dataset.sortKey;
+          employeeSortDirection = button.dataset.sortDirection;
+          employeePage = 1;
+          displayEmployees();
+        });
+      });
     });
 
     async function loadEmployeeOptions() {
@@ -158,9 +194,9 @@
         const data = await response.json();
 
         if (data.success) {
-          const employees = data.employees || [];
-          displayEmployees(employees);
-          document.getElementById('employee-count').textContent = `${employees.length} Mitarbeiter`;
+          employees = data.employees || [];
+          employeePage = 1;
+          displayEmployees();
         } else {
           document.getElementById('employees-tbody').innerHTML =
             `<tr><td colspan="7" class="table-message table-message-error">${data.message || 'Fehler beim Laden'}</td></tr>`;
@@ -172,15 +208,33 @@
       }
     }
 
-    function displayEmployees(employees) {
+    function displayEmployees() {
       const tbody = document.getElementById('employees-tbody');
       
       if (employees.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="table-message">Keine Mitarbeiter gefunden</td></tr>';
+        updateEmployeePagination();
         return;
       }
 
-      tbody.innerHTML = employees.map(emp => `
+      const sortedEmployees = [...employees].sort((first, second) => {
+        if (!employeeSortKey) return 0;
+        const firstValue = String(first[employeeSortKey] || '').toLocaleLowerCase('de');
+        const secondValue = String(second[employeeSortKey] || '').toLocaleLowerCase('de');
+        const comparison = firstValue.localeCompare(secondValue, 'de');
+        return employeeSortDirection === 'asc' ? comparison : -comparison;
+      });
+      const startIndex = (employeePage - 1) * employeePageSize;
+      const pageEmployees = sortedEmployees.slice(startIndex, startIndex + employeePageSize);
+
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.classList.toggle(
+          'sort-btn-active',
+          button.dataset.sortKey === employeeSortKey && button.dataset.sortDirection === employeeSortDirection
+        );
+      });
+
+      tbody.innerHTML = pageEmployees.map(emp => `
         <tr>
           <td>${emp.id}</td>
           <td>${emp.first_name}</td>
@@ -196,6 +250,26 @@
           </td>
         </tr>
       `).join('');
+      updateEmployeePagination();
+    }
+
+    function updateEmployeePagination() {
+      const totalPages = Math.max(1, Math.ceil(employees.length / employeePageSize));
+      const pagination = document.getElementById('employee-pagination');
+      const previousButton = document.getElementById('employee-prev-page');
+      const nextButton = document.getElementById('employee-next-page');
+
+      pagination.classList.toggle('is-hidden', employees.length <= employeePageSize);
+      previousButton.disabled = employeePage <= 1;
+      nextButton.disabled = employeePage >= totalPages;
+      document.getElementById('employee-page-info').textContent =
+        `Datenpaket ${employeePage} von ${totalPages}`;
+    }
+
+    function changeEmployeePage(offset) {
+      const totalPages = Math.max(1, Math.ceil(employees.length / employeePageSize));
+      employeePage = Math.min(totalPages, Math.max(1, employeePage + offset));
+      displayEmployees();
     }
 
     function openNewEmployeeModal() {

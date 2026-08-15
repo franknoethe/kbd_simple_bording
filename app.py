@@ -91,11 +91,26 @@ def compute_stats():
 
 @app.route("/")
 def index():
+    page_size = 800
+    try:
+        current_page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        current_page = 1
+
+    total_employees = len(EMPLOYEES)
+    total_pages = max(1, (total_employees + page_size - 1) // page_size)
+    current_page = min(current_page, total_pages)
+    start_index = (current_page - 1) * page_size
+    page_employees = EMPLOYEES[start_index:start_index + page_size]
+
     return render_template(
         "index.html",
-        employees=EMPLOYEES,
+        employees=page_employees,
         status_labels=STATUS_LABELS,
         stats=compute_stats(),
+        current_page=current_page,
+        total_pages=total_pages,
+        total_employees=total_employees,
     )
 
 
@@ -121,6 +136,250 @@ def functions_page():
 def jobs_page():
     """Render jobs CRUD page."""
     return render_template("jobs.html")
+
+
+@app.route("/process-types")
+def process_types_page():
+    """Render process types CRUD page."""
+    return render_template("process_types.html")
+
+
+@app.route("/roles")
+def roles_page():
+    """Render roles CRUD page."""
+    return render_template("roles.html")
+
+
+@app.route("/api/roles", methods=['GET'])
+def get_roles():
+    """Get all roles from PostgreSQL."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM roles ORDER BY name ASC')
+        roles = cursor.fetchall()
+        return jsonify({'success': True, 'roles': [dict(item) for item in roles]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/roles", methods=['POST'])
+def create_role():
+    """Create a role."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO roles (name)
+            VALUES (%s)
+            RETURNING id, name
+        ''', (name,))
+        role = cursor.fetchone()
+        connection.commit()
+        return jsonify({'success': True, 'role': dict(role)}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/roles/<int:role_id>", methods=['PUT'])
+def update_role(role_id):
+    """Update a role."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE roles
+            SET name = %s
+            WHERE id = %s
+            RETURNING id, name
+        ''', (name, role_id))
+        role = cursor.fetchone()
+        if role is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Rolle nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True, 'role': dict(role)})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/roles/<int:role_id>", methods=['DELETE'])
+def delete_role(role_id):
+    """Delete a role."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM roles WHERE id = %s', (role_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Rolle nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-types", methods=['GET'])
+def get_process_types():
+    """Get all process types from PostgreSQL."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM process_types ORDER BY name ASC')
+        process_types = cursor.fetchall()
+        return jsonify({'success': True, 'process_types': [dict(item) for item in process_types]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-types", methods=['POST'])
+def create_process_type():
+    """Create a process type."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO process_types (name)
+            VALUES (%s)
+            RETURNING id, name
+        ''', (name,))
+        process_type = cursor.fetchone()
+        connection.commit()
+        return jsonify({'success': True, 'process_type': dict(process_type)}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-types/<int:process_type_id>", methods=['PUT'])
+def update_process_type(process_type_id):
+    """Update a process type."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE process_types
+            SET name = %s
+            WHERE id = %s
+            RETURNING id, name
+        ''', (name, process_type_id))
+        process_type = cursor.fetchone()
+        if process_type is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozessart nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True, 'process_type': dict(process_type)})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-types/<int:process_type_id>", methods=['DELETE'])
+def delete_process_type(process_type_id):
+    """Delete a process type."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM process_types WHERE id = %s', (process_type_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozessart nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
 
 
 @app.route("/api/jobs", methods=['GET'])

@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Prozessarten CRUD{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Stammdaten</p>
+      <h1>Prozessarten</h1>
+    </div>
+    <button class="primary-btn" id="add-process-type-btn" type="button">Neue Prozessart</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Prozessartenliste</h2>
+      <span id="process-type-count">0 Prozessarten</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>
+              <span class="sortable-heading">Name <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-direction="asc" aria-label="Name aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-direction="desc" aria-label="Name absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="process-types-tbody">
+          <tr><td colspan="3" class="table-message">Lädt...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="process-type-pagination" class="table-pagination is-hidden" aria-label="Prozessartennavigation">
+      <button class="pagination-btn" id="process-type-prev-page" type="button" aria-label="Vorheriges Datenpaket">←</button>
+      <span class="pagination-info" id="process-type-page-info"></span>
+      <button class="pagination-btn" id="process-type-next-page" type="button" aria-label="Nächstes Datenpaket">→</button>
+    </div>
+  </section>
+
+  <div id="process-type-modal-overlay" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="process-type-modal-title">
+      <div class="modal-header">
+        <h2 id="process-type-modal-title">Neue Prozessart</h2>
+        <button class="close-btn" id="close-process-type-modal" type="button" aria-label="Dialog schließen">&times;</button>
+      </div>
+
+      <form id="process-type-form">
+        <input type="hidden" id="process-type-id">
+        <div class="form-group">
+          <label for="process-type-name">Name:</label>
+          <input type="text" id="process-type-name" required maxlength="255">
+        </div>
+        <p id="process-type-form-message" class="form-message" role="alert"></p>
+        <div class="modal-actions">
+          <button type="submit" class="primary-btn">Speichern</button>
+          <button type="button" class="secondary-btn" id="cancel-process-type-modal">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let processTypes = [];
+    let currentProcessTypeId = null;
+    let processTypePage = 1;
+    const processTypePageSize = 800;
+    let processTypeSortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProcessTypes();
+      document.getElementById('add-process-type-btn').addEventListener('click', openNewProcessTypeModal);
+      document.getElementById('close-process-type-modal').addEventListener('click', closeProcessTypeModal);
+      document.getElementById('cancel-process-type-modal').addEventListener('click', closeProcessTypeModal);
+      document.getElementById('process-type-form').addEventListener('submit', saveProcessType);
+      document.getElementById('process-type-prev-page').addEventListener('click', () => changeProcessTypePage(-1));
+      document.getElementById('process-type-next-page').addEventListener('click', () => changeProcessTypePage(1));
+      document.querySelectorAll('[data-sort-direction]').forEach(button => {
+        button.addEventListener('click', () => {
+          processTypeSortDirection = button.dataset.sortDirection;
+          processTypePage = 1;
+          renderProcessTypes();
+        });
+      });
+    });
+
+    async function loadProcessTypes() {
+      try {
+        const response = await fetch('/api/process-types');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Prozessarten konnten nicht geladen werden.');
+        }
+        processTypes = data.process_types || [];
+        processTypePage = 1;
+        renderProcessTypes();
+      } catch (error) {
+        document.getElementById('process-types-tbody').innerHTML =
+          `<tr><td colspan="3" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function renderProcessTypes() {
+      const tbody = document.getElementById('process-types-tbody');
+      document.getElementById('process-type-count').textContent = `${processTypes.length} Prozessarten`;
+      const totalPages = Math.max(1, Math.ceil(processTypes.length / processTypePageSize));
+
+      if (processTypes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="table-message">Keine Prozessarten gefunden.</td></tr>';
+        updateProcessTypePagination(totalPages);
+        return;
+      }
+
+      const sortedProcessTypes = [...processTypes].sort((first, second) => {
+        const comparison = String(first.name || '').localeCompare(String(second.name || ''), 'de', { sensitivity: 'base' });
+        return processTypeSortDirection === 'asc' ? comparison : -comparison;
+      });
+      const startIndex = (processTypePage - 1) * processTypePageSize;
+      const pageItems = sortedProcessTypes.slice(startIndex, startIndex + processTypePageSize);
+
+      document.querySelectorAll('[data-sort-direction]').forEach(button => {
+        button.classList.toggle('sort-btn-active', button.dataset.sortDirection === processTypeSortDirection);
+      });
+
+      tbody.innerHTML = pageItems.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="edit-btn" type="button" data-action="edit" data-id="${item.id}">Bearbeiten</button>
+              <button class="delete-btn" type="button" data-action="delete" data-id="${item.id}">Löschen</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('[data-action="edit"]').forEach(button => {
+        button.addEventListener('click', () => openEditProcessTypeModal(Number(button.dataset.id)));
+      });
+      tbody.querySelectorAll('[data-action="delete"]').forEach(button => {
+        button.addEventListener('click', () => deleteProcessType(Number(button.dataset.id)));
+      });
+      updateProcessTypePagination(totalPages);
+    }
+
+    function updateProcessTypePagination(totalPages) {
+      const pagination = document.getElementById('process-type-pagination');
+      pagination.classList.toggle('is-hidden', processTypes.length <= processTypePageSize);
+      document.getElementById('process-type-prev-page').disabled = processTypePage <= 1;
+      document.getElementById('process-type-next-page').disabled = processTypePage >= totalPages;
+      document.getElementById('process-type-page-info').textContent = `Datenpaket ${processTypePage} von ${totalPages}`;
+    }
+
+    function changeProcessTypePage(offset) {
+      const totalPages = Math.max(1, Math.ceil(processTypes.length / processTypePageSize));
+      processTypePage = Math.min(totalPages, Math.max(1, processTypePage + offset));
+      renderProcessTypes();
+    }
+
+    function openNewProcessTypeModal() {
+      currentProcessTypeId = null;
+      document.getElementById('process-type-modal-title').textContent = 'Neue Prozessart';
+      document.getElementById('process-type-form').reset();
+      setProcessTypeFormMessage('');
+      showProcessTypeModal();
+    }
+
+    function openEditProcessTypeModal(processTypeId) {
+      const item = processTypes.find(entry => entry.id === processTypeId);
+      if (!item) return;
+      currentProcessTypeId = processTypeId;
+      document.getElementById('process-type-modal-title').textContent = 'Prozessart bearbeiten';
+      document.getElementById('process-type-id').value = item.id;
+      document.getElementById('process-type-name').value = item.name;
+      setProcessTypeFormMessage('');
+      showProcessTypeModal();
+    }
+
+    async function saveProcessType(event) {
+      event.preventDefault();
+      const name = document.getElementById('process-type-name').value.trim();
+      if (!name) {
+        setProcessTypeFormMessage('Bitte einen Namen eingeben.');
+        return;
+      }
+
+      const url = currentProcessTypeId ? `/api/process-types/${currentProcessTypeId}` : '/api/process-types';
+      const method = currentProcessTypeId ? 'PUT' : 'POST';
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Speichern fehlgeschlagen.');
+        }
+        closeProcessTypeModal();
+        await loadProcessTypes();
+      } catch (error) {
+        setProcessTypeFormMessage(error.message);
+      }
+    }
+
+    async function deleteProcessType(processTypeId) {
+      if (!window.confirm('Diese Prozessart wirklich löschen?')) return;
+      try {
+        const response = await fetch(`/api/process-types/${processTypeId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Löschen fehlgeschlagen.');
+        }
+        await loadProcessTypes();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+    function showProcessTypeModal() {
+      document.getElementById('process-type-modal-overlay').classList.remove('is-hidden');
+      document.getElementById('process-type-name').focus();
+    }
+
+    function closeProcessTypeModal() {
+      document.getElementById('process-type-modal-overlay').classList.add('is-hidden');
+      currentProcessTypeId = null;
+    }
+
+    function setProcessTypeFormMessage(message) {
+      const element = document.getElementById('process-type-form-message');
+      element.textContent = message;
+      element.classList.toggle('is-visible', Boolean(message));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+{% endblock %}
