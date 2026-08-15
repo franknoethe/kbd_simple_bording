@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Funktionen CRUD{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Stammdaten</p>
+      <h1>Funktionen</h1>
+    </div>
+    <button class="primary-btn" id="add-function-btn" type="button">Neue Funktion</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Funktionsliste</h2>
+      <span id="function-count">0 Funktionen</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="functions-tbody">
+          <tr><td colspan="3" class="table-message">Lädt...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="function-modal-overlay" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="function-modal-title">
+      <div class="modal-header">
+        <h2 id="function-modal-title">Neue Funktion</h2>
+        <button class="close-btn" id="close-function-modal" type="button" aria-label="Dialog schließen">&times;</button>
+      </div>
+
+      <form id="function-form">
+        <input type="hidden" id="function-id">
+
+        <div class="form-group">
+          <label for="function-name">Name:</label>
+          <input type="text" id="function-name" required maxlength="255">
+        </div>
+
+        <p id="function-form-message" class="form-message" role="alert"></p>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary-btn">Speichern</button>
+          <button type="button" class="secondary-btn" id="cancel-function-modal">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let functions = [];
+    let currentFunctionId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFunctions();
+      document.getElementById('add-function-btn').addEventListener('click', openNewFunctionModal);
+      document.getElementById('close-function-modal').addEventListener('click', closeFunctionModal);
+      document.getElementById('cancel-function-modal').addEventListener('click', closeFunctionModal);
+      document.getElementById('function-form').addEventListener('submit', saveFunction);
+    });
+
+    async function loadFunctions() {
+      try {
+        const response = await fetch('/api/functions');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Funktionen konnten nicht geladen werden.');
+        }
+        functions = data.functions || [];
+        renderFunctions();
+      } catch (error) {
+        document.getElementById('functions-tbody').innerHTML =
+          `<tr><td colspan="3" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function renderFunctions() {
+      const tbody = document.getElementById('functions-tbody');
+      document.getElementById('function-count').textContent = `${functions.length} Funktionen`;
+
+      if (functions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="table-message">Keine Funktionen gefunden.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = functions.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="edit-btn" type="button" data-action="edit" data-id="${item.id}">Bearbeiten</button>
+              <button class="delete-btn" type="button" data-action="delete" data-id="${item.id}">Löschen</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('[data-action="edit"]').forEach(button => {
+        button.addEventListener('click', () => openEditFunctionModal(Number(button.dataset.id)));
+      });
+      tbody.querySelectorAll('[data-action="delete"]').forEach(button => {
+        button.addEventListener('click', () => deleteFunction(Number(button.dataset.id)));
+      });
+    }
+
+    function openNewFunctionModal() {
+      currentFunctionId = null;
+      document.getElementById('function-modal-title').textContent = 'Neue Funktion';
+      document.getElementById('function-form').reset();
+      setFunctionFormMessage('');
+      showFunctionModal();
+    }
+
+    function openEditFunctionModal(functionId) {
+      const item = functions.find(entry => entry.id === functionId);
+      if (!item) return;
+
+      currentFunctionId = functionId;
+      document.getElementById('function-modal-title').textContent = 'Funktion bearbeiten';
+      document.getElementById('function-id').value = item.id;
+      document.getElementById('function-name').value = item.name;
+      setFunctionFormMessage('');
+      showFunctionModal();
+    }
+
+    async function saveFunction(event) {
+      event.preventDefault();
+      const name = document.getElementById('function-name').value.trim();
+      if (!name) {
+        setFunctionFormMessage('Bitte einen Namen eingeben.');
+        return;
+      }
+
+      const url = currentFunctionId ? `/api/functions/${currentFunctionId}` : '/api/functions';
+      const method = currentFunctionId ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Speichern fehlgeschlagen.');
+        }
+        closeFunctionModal();
+        await loadFunctions();
+      } catch (error) {
+        setFunctionFormMessage(error.message);
+      }
+    }
+
+    async function deleteFunction(functionId) {
+      if (!window.confirm('Diese Funktion wirklich löschen?')) return;
+
+      try {
+        const response = await fetch(`/api/functions/${functionId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Löschen fehlgeschlagen.');
+        }
+        await loadFunctions();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+    function showFunctionModal() {
+      document.getElementById('function-modal-overlay').classList.remove('is-hidden');
+      document.getElementById('function-name').focus();
+    }
+
+    function closeFunctionModal() {
+      document.getElementById('function-modal-overlay').classList.add('is-hidden');
+      currentFunctionId = null;
+    }
+
+    function setFunctionFormMessage(message) {
+      const element = document.getElementById('function-form-message');
+      element.textContent = message;
+      element.classList.toggle('is-visible', Boolean(message));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+{% endblock %}

@@ -105,6 +105,413 @@ def employees_page():
     return render_template("employees.html")
 
 
+@app.route("/locations")
+def locations_page():
+    """Render locations CRUD page."""
+    return render_template("locations.html")
+
+
+@app.route("/functions")
+def functions_page():
+    """Render functions CRUD page."""
+    return render_template("functions.html")
+
+
+@app.route("/jobs")
+def jobs_page():
+    """Render jobs CRUD page."""
+    return render_template("jobs.html")
+
+
+@app.route("/api/jobs", methods=['GET'])
+def get_jobs():
+    """Get all jobs with their location names."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            SELECT jobs.id, jobs.location_id, jobs.name,
+                   locations.name AS location_name
+            FROM jobs
+            LEFT JOIN locations ON locations.id = jobs.location_id
+            ORDER BY jobs.name ASC
+        ''')
+        jobs = cursor.fetchall()
+        return jsonify({'success': True, 'jobs': [dict(item) for item in jobs]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/job-options", methods=['GET'])
+def get_job_options():
+    """Get active locations for the jobs location combobox."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM locations WHERE active = TRUE ORDER BY name ASC')
+        locations = cursor.fetchall()
+        return jsonify({'success': True, 'locations': [dict(item) for item in locations]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/jobs", methods=['POST'])
+def create_job():
+    """Create a job."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        location_id = data.get('location_id')
+        if not name or location_id in (None, ''):
+            return jsonify({'success': False, 'message': 'Name und Standort sind erforderlich.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO jobs (location_id, name)
+            VALUES (%s, %s)
+            RETURNING id, location_id, name
+        ''', (int(location_id), name))
+        job = cursor.fetchone()
+        connection.commit()
+        return jsonify({'success': True, 'job': dict(job)}), 201
+    except (ValueError, TypeError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültiger Standort.'}), 400
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/jobs/<int:job_id>", methods=['PUT'])
+def update_job(job_id):
+    """Update a job."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        location_id = data.get('location_id')
+        if not name or location_id in (None, ''):
+            return jsonify({'success': False, 'message': 'Name und Standort sind erforderlich.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE jobs
+            SET location_id = %s, name = %s
+            WHERE id = %s
+            RETURNING id, location_id, name
+        ''', (int(location_id), name, job_id))
+        job = cursor.fetchone()
+        if job is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Job nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True, 'job': dict(job)})
+    except (ValueError, TypeError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültiger Standort.'}), 400
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/jobs/<int:job_id>", methods=['DELETE'])
+def delete_job(job_id):
+    """Delete a job."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM jobs WHERE id = %s', (job_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Job nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/functions", methods=['GET'])
+def get_functions():
+    """Get all functions from PostgreSQL."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM functions ORDER BY name ASC')
+        functions = cursor.fetchall()
+        return jsonify({'success': True, 'functions': [dict(item) for item in functions]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/functions", methods=['POST'])
+def create_function():
+    """Create a function."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO functions (name)
+            VALUES (%s)
+            RETURNING id, name
+        ''', (name,))
+        function = cursor.fetchone()
+        connection.commit()
+        return jsonify({'success': True, 'function': dict(function)}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/functions/<int:function_id>", methods=['PUT'])
+def update_function(function_id):
+    """Update a function."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE functions
+            SET name = %s
+            WHERE id = %s
+            RETURNING id, name
+        ''', (name, function_id))
+        function = cursor.fetchone()
+        if function is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Funktion nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True, 'function': dict(function)})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/functions/<int:function_id>", methods=['DELETE'])
+def delete_function(function_id):
+    """Delete a function."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM functions WHERE id = %s', (function_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Funktion nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/locations", methods=['GET'])
+def get_locations():
+    """Get all locations from PostgreSQL."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name, active FROM locations ORDER BY name ASC')
+        locations = cursor.fetchall()
+        return jsonify({'success': True, 'locations': [dict(item) for item in locations]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/locations", methods=['POST'])
+def create_location():
+    """Create a location."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        active = bool(data.get('active', True))
+
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO locations (name, active)
+            VALUES (%s, %s)
+            RETURNING id, name, active
+        ''', (name, active))
+        location = cursor.fetchone()
+        connection.commit()
+        return jsonify({'success': True, 'location': dict(location)}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/locations/<int:location_id>", methods=['PUT'])
+def update_location(location_id):
+    """Update a location."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        active = bool(data.get('active', True))
+
+        if not name:
+            return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
+
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE locations
+            SET name = %s, active = %s
+            WHERE id = %s
+            RETURNING id, name, active
+        ''', (name, active, location_id))
+        location = cursor.fetchone()
+
+        if location is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Standort nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True, 'location': dict(location)})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/locations/<int:location_id>", methods=['DELETE'])
+def delete_location(location_id):
+    """Delete a location."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM locations WHERE id = %s', (location_id,))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Standort nicht gefunden.'}), 404
+
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
 @app.route("/api/employees", methods=['GET'])
 def get_employees():
     """Get all employees from database"""

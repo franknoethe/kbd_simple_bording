@@ -1,0 +1,6 @@
+Erstelle für die Tabelle locations eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, name und active. 
+
+Erstelle für die Tabelle functions eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id und name. 
+
+Erstelle für die Tabelle jobs eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, location_id und name. Im Formular wird der Wert der location_id durch den Wert aus locations -> name ersetzt. gleichbedeutend wird im create  und update das Datenfeld location_id durch eine combobox mit dem Werten aus locations -> name gefüllt. Ich möchte die Tabelle in den Spalten id, standort und job nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter und zurück das nächste oder vorherige Datenpaket angezeigt werden.
+

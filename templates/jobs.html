@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Jobs CRUD{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Stammdaten</p>
+      <h1>Jobs</h1>
+    </div>
+    <button class="primary-btn" id="add-job-btn" type="button">Neuer Job</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Jobliste</h2>
+      <span id="job-count">0 Jobs</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>
+              <span class="sortable-heading">ID <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="asc" aria-label="ID aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="desc" aria-label="ID absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th>
+              <span class="sortable-heading">Standort <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="asc" aria-label="Standort aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="desc" aria-label="Standort absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th>
+              <span class="sortable-heading">Job <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="asc" aria-label="Job aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="desc" aria-label="Job absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-tbody">
+          <tr><td colspan="4" class="table-message">Lädt...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="job-modal-overlay" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="job-modal-title">
+      <div class="modal-header">
+        <h2 id="job-modal-title">Neuer Job</h2>
+        <button class="close-btn" id="close-job-modal" type="button" aria-label="Dialog schließen">&times;</button>
+      </div>
+
+      <form id="job-form">
+        <input type="hidden" id="job-id">
+
+        <div class="form-group">
+          <label for="job-location-id">Standort:</label>
+          <select id="job-location-id" required>
+            <option value="">Standort auswählen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="job-name">Name:</label>
+          <input type="text" id="job-name" required maxlength="255">
+        </div>
+
+        <p id="job-form-message" class="form-message" role="alert"></p>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary-btn">Speichern</button>
+          <button type="button" class="secondary-btn" id="cancel-job-modal">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let jobs = [];
+    let locations = [];
+    let currentJobId = null;
+    let sortKey = 'id';
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLocations();
+      loadJobs();
+      document.getElementById('add-job-btn').addEventListener('click', openNewJobModal);
+      document.getElementById('close-job-modal').addEventListener('click', closeJobModal);
+      document.getElementById('cancel-job-modal').addEventListener('click', closeJobModal);
+      document.getElementById('job-form').addEventListener('submit', saveJob);
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.addEventListener('click', () => {
+          sortKey = button.dataset.sortKey;
+          sortDirection = button.dataset.sortDirection;
+          renderJobs();
+        });
+      });
+    });
+
+    async function loadLocations() {
+      try {
+        const response = await fetch('/api/job-options');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Standorte konnten nicht geladen werden.');
+        }
+
+        locations = data.locations || [];
+        const select = document.getElementById('job-location-id');
+        select.innerHTML = '<option value="">Standort auswählen</option>';
+        locations.forEach(location => {
+          const option = document.createElement('option');
+          option.value = location.id;
+          option.textContent = location.name;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        setJobFormMessage(error.message);
+      }
+    }
+
+    async function loadJobs() {
+      try {
+        const response = await fetch('/api/jobs');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Jobs konnten nicht geladen werden.');
+        }
+        jobs = data.jobs || [];
+        renderJobs();
+      } catch (error) {
+        document.getElementById('jobs-tbody').innerHTML =
+          `<tr><td colspan="4" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function renderJobs() {
+      const tbody = document.getElementById('jobs-tbody');
+      document.getElementById('job-count').textContent = `${jobs.length} Jobs`;
+
+      if (jobs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="table-message">Keine Jobs gefunden.</td></tr>';
+        return;
+      }
+
+      const sortedJobs = [...jobs].sort((first, second) => {
+        const firstValue = sortKey === 'id' ? Number(first[sortKey]) : String(first[sortKey] || '').toLocaleLowerCase('de');
+        const secondValue = sortKey === 'id' ? Number(second[sortKey]) : String(second[sortKey] || '').toLocaleLowerCase('de');
+        const comparison = firstValue < secondValue ? -1 : firstValue > secondValue ? 1 : 0;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.classList.toggle(
+          'sort-btn-active',
+          button.dataset.sortKey === sortKey && button.dataset.sortDirection === sortDirection
+        );
+      });
+
+      tbody.innerHTML = sortedJobs.map(job => `
+        <tr>
+          <td>${job.id}</td>
+          <td>${escapeHtml(job.location_name || 'Nicht zugeordnet')}</td>
+          <td>${escapeHtml(job.name)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="edit-btn" type="button" data-action="edit" data-id="${job.id}">Bearbeiten</button>
+              <button class="delete-btn" type="button" data-action="delete" data-id="${job.id}">Löschen</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('[data-action="edit"]').forEach(button => {
+        button.addEventListener('click', () => openEditJobModal(Number(button.dataset.id)));
+      });
+      tbody.querySelectorAll('[data-action="delete"]').forEach(button => {
+        button.addEventListener('click', () => deleteJob(Number(button.dataset.id)));
+      });
+    }
+
+    function openNewJobModal() {
+      currentJobId = null;
+      document.getElementById('job-modal-title').textContent = 'Neuer Job';
+      document.getElementById('job-form').reset();
+      setJobFormMessage('');
+      showJobModal();
+    }
+
+    function openEditJobModal(jobId) {
+      const job = jobs.find(item => item.id === jobId);
+      if (!job) return;
+
+      currentJobId = jobId;
+      document.getElementById('job-modal-title').textContent = 'Job bearbeiten';
+      document.getElementById('job-id').value = job.id;
+      document.getElementById('job-location-id').value = job.location_id;
+      document.getElementById('job-name').value = job.name;
+      setJobFormMessage('');
+      showJobModal();
+    }
+
+    async function saveJob(event) {
+      event.preventDefault();
+      const locationId = document.getElementById('job-location-id').value;
+      const name = document.getElementById('job-name').value.trim();
+
+      if (!locationId || !name) {
+        setJobFormMessage('Standort und Name sind erforderlich.');
+        return;
+      }
+
+      const url = currentJobId ? `/api/jobs/${currentJobId}` : '/api/jobs';
+      const method = currentJobId ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ location_id: Number(locationId), name })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Speichern fehlgeschlagen.');
+        }
+        closeJobModal();
+        await loadJobs();
+      } catch (error) {
+        setJobFormMessage(error.message);
+      }
+    }
+
+    async function deleteJob(jobId) {
+      if (!window.confirm('Diesen Job wirklich löschen?')) return;
+
+      try {
+        const response = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Löschen fehlgeschlagen.');
+        }
+        await loadJobs();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+    function showJobModal() {
+      document.getElementById('job-modal-overlay').classList.remove('is-hidden');
+      document.getElementById('job-location-id').focus();
+    }
+
+    function closeJobModal() {
+      document.getElementById('job-modal-overlay').classList.add('is-hidden');
+      currentJobId = null;
+    }
+
+    function setJobFormMessage(message) {
+      const element = document.getElementById('job-form-message');
+      element.textContent = message;
+      element.classList.toggle('is-visible', Boolean(message));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+{% endblock %}

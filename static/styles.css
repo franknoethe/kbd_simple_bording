@@ -188,6 +188,41 @@ th {
   letter-spacing: 0.06em;
 }
 
+.sortable-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.sort-buttons {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sort-btn:hover,
+.sort-btn-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
 .person-cell {
   display: flex;
   align-items: center;
@@ -336,6 +371,50 @@ th {
 .form-group select:focus {
   outline: 3px solid var(--primary-soft);
   border-color: var(--primary);
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox-field input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-active {
+  background: rgba(30, 169, 124, 0.12);
+  color: var(--green);
+}
+
+.status-inactive {
+  background: rgba(109, 122, 140, 0.14);
+  color: var(--muted);
+}
+
+.form-message {
+  min-height: 20px;
+  margin: 14px 0 0;
+  color: var(--red);
+  font-size: 13px;
+}
+
+.form-message:not(.is-visible) {
+  visibility: hidden;
 }
 
 .modal-actions {
