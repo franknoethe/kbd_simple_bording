@@ -32,6 +32,10 @@
                 <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="asc" aria-label="Standort aufsteigend sortieren" title="ASC">↑</button>
                 <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="desc" aria-label="Standort absteigend sortieren" title="DESC">↓</button>
               </span></span>
+              <div class="location-filter">
+                <input id="job-location-filter" type="search" placeholder="Standort filtern" autocomplete="off" aria-label="Standort filtern">
+                <div id="job-location-suggestions" class="location-suggestions is-hidden" role="listbox"></div>
+              </div>
             </th>
             <th>
               <span class="sortable-heading">Job <span class="sort-buttons">
@@ -83,10 +87,12 @@
 
   <script>
     let jobs = [];
+    let allJobs = [];
     let locations = [];
     let currentJobId = null;
     let sortKey = 'id';
     let sortDirection = 'asc';
+    let selectedLocationId = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       loadLocations();
@@ -102,6 +108,8 @@
           renderJobs();
         });
       });
+      document.getElementById('job-location-filter').addEventListener('input', handleLocationFilterInput);
+      document.addEventListener('click', handleOutsideLocationSuggestionsClick);
     });
 
     async function loadLocations() {
@@ -133,7 +141,8 @@
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Jobs konnten nicht geladen werden.');
         }
-        jobs = data.jobs || [];
+        allJobs = data.jobs || [];
+        jobs = [...allJobs];
         renderJobs();
       } catch (error) {
         document.getElementById('jobs-tbody').innerHTML =
@@ -184,6 +193,75 @@
       tbody.querySelectorAll('[data-action="delete"]').forEach(button => {
         button.addEventListener('click', () => deleteJob(Number(button.dataset.id)));
       });
+    }
+
+    function handleLocationFilterInput(event) {
+      const searchValue = event.target.value.trim();
+      selectedLocationId = null;
+
+      if (searchValue.length < 3) {
+        hideLocationSuggestions();
+        jobs = [...allJobs];
+        renderJobs();
+        return;
+      }
+
+      const normalizedSearch = searchValue.toLocaleLowerCase('de');
+      const matchingLocations = [];
+      const seenLocationIds = new Set();
+
+      allJobs.forEach(job => {
+        const locationName = String(job.location_name || '');
+        if (
+          locationName.toLocaleLowerCase('de').includes(normalizedSearch) &&
+          !seenLocationIds.has(job.location_id)
+        ) {
+          seenLocationIds.add(job.location_id);
+          matchingLocations.push({ id: job.location_id, name: locationName });
+        }
+      });
+
+      showLocationSuggestions(matchingLocations.slice(0, 10));
+    }
+
+    function showLocationSuggestions(matchingLocations) {
+      const suggestions = document.getElementById('job-location-suggestions');
+      if (matchingLocations.length === 0) {
+        suggestions.innerHTML = '<div class="location-suggestion-empty">Kein Standort gefunden</div>';
+      } else {
+        suggestions.innerHTML = matchingLocations.map(location => `
+          <button class="location-suggestion" type="button" role="option" data-location-id="${location.id}" data-location-name="${encodeURIComponent(location.name)}">
+            ${escapeHtml(location.name)}
+          </button>
+        `).join('');
+
+        suggestions.querySelectorAll('[data-location-id]').forEach(button => {
+          button.addEventListener('click', () => selectLocationFilter(
+            Number(button.dataset.locationId),
+            decodeURIComponent(button.dataset.locationName)
+          ));
+        });
+      }
+      suggestions.classList.remove('is-hidden');
+    }
+
+    function selectLocationFilter(locationId, locationName) {
+      selectedLocationId = locationId;
+      document.getElementById('job-location-filter').value = locationName;
+      jobs = allJobs.filter(job => Number(job.location_id) === locationId);
+      hideLocationSuggestions();
+      renderJobs();
+    }
+
+    function hideLocationSuggestions() {
+      document.getElementById('job-location-suggestions').classList.add('is-hidden');
+    }
+
+    function handleOutsideLocationSuggestionsClick(event) {
+      const filter = document.querySelector('.location-filter');
+      if (filter && !filter.contains(event.target)) {
+        hideLocationSuggestions();
+      }
     }
 
     function openNewJobModal() {

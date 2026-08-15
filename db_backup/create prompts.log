@@ -1,15 +1,36 @@
+**********************************************************
+ //* CRUD for locations
+*********************************************************
 Erstelle für die Tabelle locations eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, name und active. 
 
+**********************************************************
+ //* CRUD for functions
+*********************************************************
 Erstelle für die Tabelle functions eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id und name. 
 
 **********************************************************
  //* CRUD for jobs
 *********************************************************
 Erstelle für die Tabelle jobs eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, location_id und name. Im Formular wird der Wert der location_id durch den Wert aus locations -> name ersetzt. gleichbedeutend wird im create  und update das Datenfeld location_id durch eine combobox mit dem Werten aus locations -> name gefüllt. Ich möchte die Tabelle in den Spalten id, standort und job nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+Schreibe mir einen Datensatz-Filter für die jobliste. Es erscheint in der Spalte standort unter der Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze von jobs aus dem der Benutzer einen wählt. Nach einem klick wird die Jobliste ausschließlich mit den Datensatzen des gewählten Standortes gefüllt.
 
+**********************************************************
+ //* Changes for employees
+*********************************************************
 In der Tabelle Mitarbeiter möchte ich die Spalten vorname, nachname und abteilung nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
+Erweitere mir die Tabelle mitarbeiterliste mit den Spalten Standort -> location_id, Job -> job_id, Rolle -> role_id und Funktion -> function_id. 
+Schreibe mir einen Datensatz-Filter für die Mtarbeiterliste. Es erscheint in den Spalten Nachname, Standort, Job, Rolle und Funktion unter der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Mitarbeiterliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+
+Im Fall von create also neuer job 
+
 
 **********************************************************
  //* CRUD for process_types
 *********************************************************
 Erstelle für die Tabelle process_types eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id und name. Ich möchte die Tabelle in der Spalte name nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
+**********************************************************
+ //* CRUD for roles
+*********************************************************
+Erstelle für die Tabelle roles eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id und name. Ich möchte die Tabelle in der Spalte name nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
