@@ -28,14 +28,14 @@
               </span></span>
             </th>
             <th>
-              <span class="sortable-heading">Standort <span class="sort-buttons">
+            <div class="location-filter">
+                <input id="job-location-filter" type="search" placeholder="Standort filtern" autocomplete="off" aria-label="Standort filtern">
+                <div id="job-location-suggestions" class="location-suggestions is-hidden" role="listbox"></div>
+            </div>
+            <span class="sortable-heading">Standort <span class="sort-buttons">
                 <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="asc" aria-label="Standort aufsteigend sortieren" title="ASC">↑</button>
                 <button class="sort-btn" type="button" data-sort-key="location_name" data-sort-direction="desc" aria-label="Standort absteigend sortieren" title="DESC">↓</button>
               </span></span>
-              <div class="location-filter">
-                <input id="job-location-filter" type="search" placeholder="Standort filtern" autocomplete="off" aria-label="Standort filtern">
-                <div id="job-location-suggestions" class="location-suggestions is-hidden" role="listbox"></div>
-              </div>
             </th>
             <th>
               <span class="sortable-heading">Job <span class="sort-buttons">
