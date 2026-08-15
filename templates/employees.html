@@ -22,31 +22,53 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>
-              <span class="sortable-heading">Vorname <span class="sort-buttons">
-                <button class="sort-btn" type="button" data-sort-key="first_name" data-sort-direction="asc" aria-label="Vorname aufsteigend sortieren" title="ASC">↑</button>
-                <button class="sort-btn" type="button" data-sort-key="first_name" data-sort-direction="desc" aria-label="Vorname absteigend sortieren" title="DESC">↓</button>
-              </span></span>
-            </th>
+            <th>Vorname</th>
             <th>
               <span class="sortable-heading">Nachname <span class="sort-buttons">
                 <button class="sort-btn" type="button" data-sort-key="last_name" data-sort-direction="asc" aria-label="Nachname aufsteigend sortieren" title="ASC">↑</button>
                 <button class="sort-btn" type="button" data-sort-key="last_name" data-sort-direction="desc" aria-label="Nachname absteigend sortieren" title="DESC">↓</button>
               </span></span>
+              <div class="employee-filter">
+                <input id="employee-filter-last-name" type="search" placeholder="Nachname filtern" autocomplete="off" aria-label="Nachname filtern" data-filter-field="last_name">
+                <div id="employee-suggestions-last-name" class="employee-suggestions is-hidden" role="listbox"></div>
+              </div>
             </th>
             <th>E-Mail</th>
-            <th>
-              <span class="sortable-heading">Abteilung <span class="sort-buttons">
-                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="asc" aria-label="Abteilung aufsteigend sortieren" title="ASC">↑</button>
-                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="desc" aria-label="Abteilung absteigend sortieren" title="DESC">↓</button>
-              </span></span>
-            </th>
+            <th>Abteilung</th>
             <th>Benutzername</th>
+            <th>
+              <span class="sortable-heading">Standort</span>
+              <div class="employee-filter">
+                <input id="employee-filter-location" type="search" placeholder="Standort filtern" autocomplete="off" aria-label="Standort filtern" data-filter-field="location_id">
+                <div id="employee-suggestions-location" class="employee-suggestions is-hidden" role="listbox"></div>
+              </div>
+            </th>
+            <th>
+              <span class="sortable-heading">Job</span>
+              <div class="employee-filter">
+                <input id="employee-filter-job" type="search" placeholder="Job filtern" autocomplete="off" aria-label="Job filtern" data-filter-field="job_id">
+                <div id="employee-suggestions-job" class="employee-suggestions is-hidden" role="listbox"></div>
+              </div>
+            </th>
+            <th>
+              <span class="sortable-heading">Rolle</span>
+              <div class="employee-filter">
+                <input id="employee-filter-role" type="search" placeholder="Rolle filtern" autocomplete="off" aria-label="Rolle filtern" data-filter-field="role_id">
+                <div id="employee-suggestions-role" class="employee-suggestions is-hidden" role="listbox"></div>
+              </div>
+            </th>
+            <th>
+              <span class="sortable-heading">Funktion</span>
+              <div class="employee-filter">
+                <input id="employee-filter-function" type="search" placeholder="Funktion filtern" autocomplete="off" aria-label="Funktion filtern" data-filter-field="function_id">
+                <div id="employee-suggestions-function" class="employee-suggestions is-hidden" role="listbox"></div>
+              </div>
+            </th>
             <th>Aktionen</th>
           </tr>
         </thead>
         <tbody id="employees-tbody">
-          <tr><td colspan="7" class="table-message">Lädt...</td></tr>
+          <tr><td colspan="11" class="table-message">Lädt...</td></tr>
         </tbody>
       </table>
     </div>
@@ -136,6 +158,21 @@
 
   <script>
     let employees = [];
+    let allEmployees = [];
+    const employeeOptionMaps = {
+      location_id: new Map(),
+      job_id: new Map(),
+      role_id: new Map(),
+      function_id: new Map()
+    };
+    const employeeFilters = {
+      last_name: null,
+      department: null,
+      location_id: null,
+      job_id: null,
+      role_id: null,
+      function_id: null
+    };
     let currentEditingId = null;
     let employeePage = 1;
     const employeePageSize = 800;
@@ -147,6 +184,7 @@
       loadEmployeeOptions();
       loadEmployees();
       document.getElementById('add-employee-btn').addEventListener('click', openNewEmployeeModal);
+      document.getElementById('location-id').addEventListener('change', handleEmployeeLocationChange);
       document.getElementById('employee-prev-page').addEventListener('click', () => changeEmployeePage(-1));
       document.getElementById('employee-next-page').addEventListener('click', () => changeEmployeePage(1));
       document.querySelectorAll('[data-sort-key]').forEach(button => {
@@ -157,6 +195,10 @@
           displayEmployees();
         });
       });
+      document.querySelectorAll('[data-filter-field]').forEach(input => {
+        input.addEventListener('input', event => handleEmployeeFilterInput(event.target.dataset.filterField, event));
+      });
+      document.addEventListener('click', handleEmployeeFilterOutsideClick);
     });
 
     async function loadEmployeeOptions() {
@@ -169,9 +211,15 @@
         }
 
         fillSelect('location-id', data.locations, 'Standort auswählen');
-        fillSelect('job-id', data.jobs, 'Job auswählen');
+        employeeJobOptions = data.jobs || [];
+        fillSelect('job-id', [], 'Zuerst Standort auswählen');
         fillSelect('role-id', data.roles, 'Rolle auswählen');
         fillSelect('function-id', data.functions, 'Funktion auswählen');
+        employeeOptionMaps.location_id = new Map(data.locations.map(item => [String(item.id), item.name]));
+        employeeOptionMaps.job_id = new Map(data.jobs.map(item => [String(item.id), item.name]));
+        employeeOptionMaps.role_id = new Map(data.roles.map(item => [String(item.id), item.name]));
+        employeeOptionMaps.function_id = new Map(data.functions.map(item => [String(item.id), item.name]));
+        if (allEmployees.length) displayEmployees();
       } catch (error) {
         console.error('Error loading employee options:', error);
       }
@@ -188,31 +236,57 @@
       });
     }
 
+    let employeeJobOptions = [];
+
+    function handleEmployeeLocationChange() {
+      const locationId = document.getElementById('location-id').value;
+      updateEmployeeJobOptions(locationId);
+    }
+
+    function updateEmployeeJobOptions(locationId, selectedJobId = '') {
+      const matchingJobs = employeeJobOptions.filter(job => String(job.location_id) === String(locationId));
+      fillSelect(
+        'job-id',
+        matchingJobs,
+        locationId ? 'Job auswählen' : 'Zuerst Standort auswählen'
+      );
+      document.getElementById('job-id').value = String(selectedJobId || '');
+    }
+
     async function loadEmployees() {
       try {
         const response = await fetch('/api/employees');
         const data = await response.json();
 
         if (data.success) {
-          employees = data.employees || [];
+          allEmployees = data.employees || [];
+          employees = [...allEmployees];
           employeePage = 1;
           displayEmployees();
         } else {
           document.getElementById('employees-tbody').innerHTML =
-            `<tr><td colspan="7" class="table-message table-message-error">${data.message || 'Fehler beim Laden'}</td></tr>`;
+            `<tr><td colspan="11" class="table-message table-message-error">${data.message || 'Fehler beim Laden'}</td></tr>`;
         }
       } catch (error) {
         console.error('Error loading employees:', error);
         document.getElementById('employees-tbody').innerHTML = 
-          '<tr><td colspan="7" class="table-message table-message-error">Fehler beim Laden</td></tr>';
+          '<tr><td colspan="11" class="table-message table-message-error">Fehler beim Laden</td></tr>';
       }
     }
 
     function displayEmployees() {
       const tbody = document.getElementById('employees-tbody');
       
+      employees = allEmployees.filter(employee => Object.entries(employeeFilters).every(([field, value]) => {
+        if (value === null) return true;
+        return field === 'last_name' || field === 'department'
+          ? String(employee[field] || '') === value
+          : String(employee[field] || '') === String(value);
+      }));
+      document.getElementById('employee-count').textContent = `${employees.length} Mitarbeiter`;
+
       if (employees.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="table-message">Keine Mitarbeiter gefunden</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="table-message">Keine Mitarbeiter gefunden</td></tr>';
         updateEmployeePagination();
         return;
       }
@@ -242,6 +316,10 @@
           <td>${emp.email || '-'}</td>
           <td>${emp.department || '-'}</td>
           <td>${emp.username || '-'}</td>
+          <td>${escapeHtml(employeeOptionMaps.location_id.get(String(emp.location_id)) || '-')}</td>
+          <td>${escapeHtml(employeeOptionMaps.job_id.get(String(emp.job_id)) || '-')}</td>
+          <td>${escapeHtml(employeeOptionMaps.role_id.get(String(emp.role_id)) || '-')}</td>
+          <td>${escapeHtml(employeeOptionMaps.function_id.get(String(emp.function_id)) || '-')}</td>
           <td>
             <div class="action-btns">
               <button class="edit-btn" onclick="openEditModal(${emp.id})">Edit</button>
@@ -251,6 +329,81 @@
         </tr>
       `).join('');
       updateEmployeePagination();
+    }
+
+    function handleEmployeeFilterInput(field, event) {
+      const searchValue = event.target.value.trim();
+      employeeFilters[field] = null;
+
+      if (searchValue.length < 3) {
+        hideEmployeeSuggestions(field);
+        employeePage = 1;
+        displayEmployees();
+        return;
+      }
+
+      const values = new Map();
+      allEmployees.forEach(employee => {
+        const value = field === 'last_name' || field === 'department'
+          ? employee[field]
+          : employeeOptionMaps[field].get(String(employee[field]));
+        if (value && String(value).toLocaleLowerCase('de').includes(searchValue.toLocaleLowerCase('de'))) {
+          const key = field === 'last_name' || field === 'department' ? String(value) : String(employee[field]);
+          values.set(key, String(value));
+        }
+      });
+
+      showEmployeeSuggestions(field, [...values.entries()].slice(0, 10));
+    }
+
+    function showEmployeeSuggestions(field, values) {
+      const suggestions = document.getElementById(`employee-suggestions-${employeeFilterSuffix(field)}`);
+      if (!values.length) {
+        suggestions.innerHTML = '<div class="employee-suggestion-empty">Kein Treffer gefunden</div>';
+      } else {
+        suggestions.innerHTML = values.map(([value, label]) => `
+          <button class="employee-suggestion" type="button" data-filter-value="${encodeURIComponent(value)}" data-filter-label="${encodeURIComponent(label)}">${escapeHtml(label)}</button>
+        `).join('');
+        suggestions.querySelectorAll('[data-filter-value]').forEach(button => {
+          button.addEventListener('click', () => selectEmployeeFilter(
+            field,
+            decodeURIComponent(button.dataset.filterValue),
+            decodeURIComponent(button.dataset.filterLabel)
+          ));
+        });
+      }
+      suggestions.classList.remove('is-hidden');
+    }
+
+    function selectEmployeeFilter(field, value, label) {
+      employeeFilters[field] = value;
+      document.querySelector(`[data-filter-field="${field}"]`).value = label;
+      hideEmployeeSuggestions(field);
+      employeePage = 1;
+      displayEmployees();
+    }
+
+    function hideEmployeeSuggestions(field) {
+      document.getElementById(`employee-suggestions-${employeeFilterSuffix(field)}`).classList.add('is-hidden');
+    }
+
+    function employeeFilterSuffix(field) {
+      return { last_name: 'last-name', department: 'department', location_id: 'location', job_id: 'job', role_id: 'role', function_id: 'function' }[field];
+    }
+
+    function handleEmployeeFilterOutsideClick(event) {
+      if (!event.target.closest('.employee-filter')) {
+        document.querySelectorAll('.employee-suggestions').forEach(element => element.classList.add('is-hidden'));
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function updateEmployeePagination() {
@@ -277,6 +430,7 @@
       document.getElementById('modal-title').textContent = 'Neuer Mitarbeiter';
       document.getElementById('employee-form').reset();
       document.getElementById('employee-id').value = '';
+      updateEmployeeJobOptions('');
       document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -298,7 +452,7 @@
             document.getElementById('username').value = employee.username || '';
             document.getElementById('password').value = '';
             document.getElementById('location-id').value = employee.location_id || 0;
-            document.getElementById('job-id').value = employee.job_id || 0;
+            updateEmployeeJobOptions(employee.location_id, employee.job_id);
             document.getElementById('role-id').value = employee.role_id || 0;
             document.getElementById('function-id').value = employee.function_id || 0;
             document.getElementById('modal-overlay').style.display = 'flex';

@@ -808,7 +808,7 @@ def get_employee_options():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('SELECT id, name FROM locations WHERE active = TRUE ORDER BY name ASC')
         locations = cursor.fetchall()
-        cursor.execute('SELECT id, name FROM jobs ORDER BY name ASC')
+        cursor.execute('SELECT id, location_id, name FROM jobs ORDER BY name ASC')
         jobs = cursor.fetchall()
         cursor.execute('SELECT id, name FROM roles ORDER BY name ASC')
         roles = cursor.fetchall()

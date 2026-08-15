@@ -339,6 +339,77 @@ th {
   color: var(--muted);
 }
 
+.employee-filter {
+  position: relative;
+  min-width: 150px;
+  margin-top: 8px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.employee-filter input {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.employee-filter input:focus {
+  outline: 3px solid var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.employee-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  overflow: hidden;
+  min-width: 180px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.employee-suggestion,
+.employee-suggestion-empty {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.employee-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.employee-suggestion {
+  cursor: pointer;
+}
+
+.employee-suggestion:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.employee-suggestion-empty {
+  color: var(--muted);
+}
+
 .person-cell {
   display: flex;
   align-items: center;

@@ -22,7 +22,7 @@ In der Tabelle Mitarbeiter möchte ich die Spalten vorname, nachname und abteilu
 Erweitere mir die Tabelle mitarbeiterliste mit den Spalten Standort -> location_id, Job -> job_id, Rolle -> role_id und Funktion -> function_id. 
 Schreibe mir einen Datensatz-Filter für die Mtarbeiterliste. Es erscheint in den Spalten Nachname, Standort, Job, Rolle und Funktion unter der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Mitarbeiterliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 
-Im Fall von create also neuer job 
+Im Fall von create und update werden in den Modals Neuer Mitarbeiter und Mitarbeiter bearbeiten nach der Wahl in der Combobox Standort die Daten der Combobox Job auf die der standort_id angezeigt.  
 
 
 **********************************************************
