@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}E-Mail-Vorlagen{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Management</p>
+      <h1>E-Mail-Vorlagen</h1>
+    </div>
+    <button class="primary-btn" id="add-template-btn" type="button">Neue Vorlage</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Vorlagenliste</h2>
+      <span id="template-count">0 Vorlagen</span>
+    </div>
+    <div class="table-wrap">
+      <table class="email-template-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>
+              <div class="template-filter"><input type="search" data-filter-field="name" placeholder="NAME suchen" aria-label="NAME suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div>
+              <span class="sortable-heading">NAME <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="asc" title="ASC" aria-label="NAME aufsteigend sortieren">↑</button><button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="desc" title="DESC" aria-label="NAME absteigend sortieren">↓</button></span></span>
+            </th>
+            <th>
+              <div class="template-filter"><input type="search" data-filter-field="subject" placeholder="SUBJEKT suchen" aria-label="SUBJEKT suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div>
+              <span class="sortable-heading">SUBJEKT <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="subject" data-sort-direction="asc" title="ASC" aria-label="SUBJEKT aufsteigend sortieren">↑</button><button class="sort-btn" type="button" data-sort-key="subject" data-sort-direction="desc" title="DESC" aria-label="SUBJEKT absteigend sortieren">↓</button></span></span>
+            </th>
+            <th>STATUS</th>
+            <th class="th-action">AKTIONEN</th>
+          </tr>
+        </thead>
+        <tbody id="templates-tbody"><tr><td colspan="5" class="table-message">Lädt...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="template-pagination" class="table-pagination is-hidden" aria-label="Vorlagennavigation">
+      <button class="pagination-btn" id="template-prev-page" type="button" aria-label="Vorheriges Datenpaket">←</button>
+      <span class="pagination-info" id="template-page-info"></span>
+      <button class="pagination-btn" id="template-next-page" type="button" aria-label="Nächstes Datenpaket">→</button>
+    </div>
+  </section>
+
+  <div id="template-modal" class="modal-overlay is-hidden">
+    <div class="modal template-modal">
+      <div class="modal-header"><h2 id="template-modal-title">Neue Vorlage</h2><button class="close-btn" type="button" data-close="template-modal" aria-label="Dialog schließen">&times;</button></div>
+      <form id="template-form">
+        <input type="hidden" id="template-id">
+        <div class="form-group"><label for="template-name">Name</label><input id="template-name" required></div>
+        <div class="form-group"><label for="template-subject">Betreff</label><input id="template-subject" required></div>
+        <div class="form-group"><label for="template-type">Mailtyp</label><select id="template-type"><option value="text">Text-Mail</option><option value="html">HTML-Mail</option></select></div>
+        <div class="form-group" id="template-text-group"><label for="template-text">Text</label><textarea id="template-text" rows="8"></textarea></div>
+        <div class="form-group is-hidden" id="template-html-group"><label for="template-html">HTML</label><textarea id="template-html" rows="8"></textarea><button class="primary-btn inline-import-btn" id="import-html-btn" type="button">Import</button></div>
+        <label class="checkbox-field"><input id="template-active" type="checkbox" checked> Aktiv</label>
+        <p id="template-form-message" class="form-message"></p>
+        <div class="modal-actions"><button class="primary-btn" type="submit">Speichern</button><button class="primary-btn" type="button" data-close="template-modal">Abbrechen</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="preview-modal" class="modal-overlay is-hidden">
+    <div class="modal preview-modal">
+      <div class="modal-header"><h2 id="preview-title">Vorschau</h2><button class="close-btn" type="button" data-close="preview-modal" aria-label="Dialog schließen">&times;</button></div>
+      <iframe id="preview-content" title="E-Mail-Vorschau" sandbox=""></iframe>
+    </div>
+  </div>
+
+  <div id="import-modal" class="modal-overlay is-hidden">
+    <div class="modal">
+      <div class="modal-header"><h2>Outlookvorlage importieren</h2><button class="close-btn" type="button" data-close="import-modal" aria-label="Dialog schließen">&times;</button></div>
+      <form id="import-form">
+        <div class="form-group"><label for="oft-file">OFT-Datei</label><input id="oft-file" type="file" accept=".oft" required></div>
+        <p id="import-status" class="form-message"></p>
+        <div class="modal-actions"><button class="secondary-btn" id="read-oft-btn" type="button">Datei einlesen</button><button class="primary-btn" id="apply-import-btn" type="submit" disabled>Übernehmen</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="modal-overlay is-hidden">
+    <div class="modal delete-confirm-modal">
+      <div class="modal-header"><h2>Vorlage löschen</h2><button class="close-btn" type="button" data-close="delete-modal" aria-label="Dialog schließen">&times;</button></div>
+      <p id="delete-confirm-text">Diese Vorlage wirklich löschen?</p>
+      <div class="modal-actions"><button class="delete-btn" id="confirm-delete-btn" type="button">Löschen</button><button class="secondary-btn" type="button" data-close="delete-modal">Abbrechen</button></div>
+    </div>
+  </div>
+
+  <script>
+    let templates = [];
+    let templatePage = 1;
+    let templateTotalPages = 1;
+    let templateSortKey = 'name';
+    let templateSortDirection = 'asc';
+    const templateFilters = { name: '', subject: '' };
+    const templateFilterTimers = new Map();
+    let importedTemplate = null;
+    let templateToDelete = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTemplates();
+      document.getElementById('add-template-btn').addEventListener('click', () => openTemplateModal());
+      document.getElementById('template-type').addEventListener('change', updateTemplateType);
+      document.getElementById('import-html-btn').addEventListener('click', openImportModal);
+      document.getElementById('template-form').addEventListener('submit', saveTemplate);
+      document.getElementById('import-form').addEventListener('submit', applyImport);
+      document.getElementById('read-oft-btn').addEventListener('click', readOftFile);
+      document.getElementById('template-prev-page').addEventListener('click', () => changeTemplatePage(-1));
+      document.getElementById('template-next-page').addEventListener('click', () => changeTemplatePage(1));
+      document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
+      document.querySelectorAll('[data-sort-key]').forEach(button => button.addEventListener('click', () => {
+        templateSortKey = button.dataset.sortKey;
+        templateSortDirection = button.dataset.sortDirection;
+        templatePage = 1;
+        loadTemplates();
+      }));
+      document.querySelectorAll('[data-filter-field]').forEach(input => input.addEventListener('input', () => handleFilterInput(input)));
+      document.addEventListener('click', event => {
+        if (!event.target.closest('.template-filter')) document.querySelectorAll('.template-suggestions').forEach(item => item.classList.add('is-hidden'));
+      });
+    });
+
+    async function loadTemplates() {
+      const params = new URLSearchParams({ page: templatePage, sort: templateSortKey, direction: templateSortDirection });
+      Object.entries(templateFilters).forEach(([key, value]) => { if (value.length >= 3) params.set(key, value); });
+      try {
+        const response = await fetch(`/api/email-templates?${params}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Vorlagen konnten nicht geladen werden.');
+        templates = data.email_templates;
+        templatePage = data.page;
+        templateTotalPages = data.total_pages;
+        renderTemplates(data.total);
+      } catch (error) {
+        document.getElementById('templates-tbody').innerHTML = `<tr><td colspan="5" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function renderTemplates(total) {
+      const tbody = document.getElementById('templates-tbody');
+      tbody.replaceChildren();
+      document.getElementById('template-count').textContent = `${total} Vorlage${total === 1 ? '' : 'n'}`;
+      if (!templates.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-message">Keine Vorlagen gefunden.</td></tr>'; }
+      templates.forEach(template => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${template.id}</td><td>${escapeHtml(template.name)}</td><td>${escapeHtml(template.subject)}</td><td><span class="status-pill ${template.active ? 'status-active' : 'status-inactive'}">${template.active ? 'Aktiv' : 'Inaktiv'}</span></td><td class="action-btns"><button class="edit-btn" type="button">Bearbeiten</button><button class="preview-btn" type="button">Vorschau</button><button class="delete-btn" type="button">Löschen</button></td>`;
+        row.querySelector('.edit-btn').addEventListener('click', () => openTemplateModal(template));
+        row.querySelector('.preview-btn').addEventListener('click', () => openPreview(template));
+        row.querySelector('.delete-btn').addEventListener('click', () => deleteTemplate(template.id));
+        tbody.appendChild(row);
+      });
+      const pagination = document.getElementById('template-pagination');
+      pagination.classList.toggle('is-hidden', total <= 800);
+      document.getElementById('template-page-info').textContent = `Seite ${templatePage} von ${templateTotalPages}`;
+      document.getElementById('template-prev-page').disabled = templatePage <= 1;
+      document.getElementById('template-next-page').disabled = templatePage >= templateTotalPages;
+    }
+
+    function handleFilterInput(input) {
+      const field = input.dataset.filterField;
+      const suggestions = input.nextElementSibling;
+      clearTimeout(templateFilterTimers.get(field));
+      const value = input.value.trim();
+      templateFilters[field] = value;
+      if (value.length < 3) { suggestions.classList.add('is-hidden'); templatePage = 1; loadTemplates(); return; }
+      templateFilterTimers.set(field, setTimeout(() => loadSuggestions(field, value, suggestions), 220));
+    }
+
+    async function loadSuggestions(field, value, container) {
+      const params = new URLSearchParams({ field, q: value });
+      const response = await fetch(`/api/email-templates/suggestions?${params}`);
+      const data = await response.json();
+      container.replaceChildren();
+      (data.email_templates || []).forEach(item => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'template-suggestion';
+        button.textContent = item[field] || '(leer)';
+        button.addEventListener('click', () => { document.querySelector(`[data-filter-field="${field}"]`).value = item[field] || ''; templateFilters[field] = item[field] || ''; container.classList.add('is-hidden'); templatePage = 1; loadTemplates(); });
+        container.appendChild(button);
+      });
+      if (!container.children.length) { const empty = document.createElement('span'); empty.className = 'template-suggestion-empty'; empty.textContent = 'Keine Treffer'; container.appendChild(empty); }
+      container.classList.remove('is-hidden');
+      templatePage = 1; loadTemplates();
+    }
+
+    function changeTemplatePage(delta) { templatePage = Math.max(1, Math.min(templateTotalPages, templatePage + delta)); loadTemplates(); }
+    function openTemplateModal(template = null) {
+      document.getElementById('template-modal-title').textContent = template ? 'Vorlage bearbeiten' : 'Neue Vorlage';
+      document.getElementById('template-id').value = template?.id || '';
+      document.getElementById('template-name').value = template?.name || '';
+      document.getElementById('template-subject').value = template?.subject || '';
+      document.getElementById('template-html').value = template?.body_html || '';
+      document.getElementById('template-text').value = template?.body_text || '';
+      document.getElementById('template-type').value = template?.body_html ? 'html' : 'text';
+      updateTemplateType();
+      document.getElementById('template-active').checked = template?.active ?? true;
+      document.getElementById('template-form-message').textContent = '';
+      document.getElementById('template-modal').classList.remove('is-hidden');
+    }
+    function updateTemplateType() {
+      const isHtml = document.getElementById('template-type').value === 'html';
+      document.getElementById('template-html-group').classList.toggle('is-hidden', !isHtml);
+      document.getElementById('template-text-group').classList.toggle('is-hidden', isHtml);
+      document.getElementById('template-html').required = isHtml;
+      document.getElementById('template-text').required = !isHtml;
+    }
+    async function saveTemplate(event) {
+      event.preventDefault();
+      const id = document.getElementById('template-id').value;
+      const bodyHtml = document.getElementById('template-html').value;
+      const bodyText = document.getElementById('template-text').value;
+      const isHtml = document.getElementById('template-type').value === 'html';
+      const payload = { name: document.getElementById('template-name').value, subject: document.getElementById('template-subject').value, body_html: isHtml ? bodyHtml : '', body_text: isHtml ? '' : bodyText, active: document.getElementById('template-active').checked };
+      const response = await fetch(`/api/email-templates${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!data.success) { document.getElementById('template-form-message').textContent = data.message; return; }
+      closeModal('template-modal'); loadTemplates();
+    }
+    function deleteTemplate(id) {
+      templateToDelete = id;
+      document.getElementById('delete-confirm-text').textContent = 'Diese Vorlage wirklich löschen?';
+      document.getElementById('delete-modal').classList.remove('is-hidden');
+    }
+    document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+      if (templateToDelete === null) return;
+      const id = templateToDelete;
+      templateToDelete = null;
+      closeModal('delete-modal');
+      const response = await fetch(`/api/email-templates/${id}`, { method: 'DELETE' });
+      if (response.ok) loadTemplates();
+    });
+    function openPreview(template) {
+      const oldPreview = document.getElementById('preview-content');
+      const preview = document.createElement('iframe');
+      preview.id = 'preview-content';
+      preview.title = 'E-Mail-Vorschau';
+      preview.setAttribute('sandbox', '');
+      oldPreview.replaceWith(preview);
+      document.getElementById('preview-title').textContent = `Vorschau: ${template.name}`;
+      let content;
+      if (template.body_html) {
+        content = template.body_html;
+      } else if (template.body_text) {
+        content = `<pre style="white-space: pre-wrap; font: 16px sans-serif; padding: 24px;">${escapeHtml(template.body_text)}</pre>`;
+      } else {
+        content = '<p style="padding: 24px;">Kein Inhalt vorhanden.</p>';
+      }
+      document.getElementById('preview-modal').classList.remove('is-hidden');
+      preview.srcdoc = content;
+    }
+    function openImportModal() { importedTemplate = null; document.getElementById('oft-file').value = ''; document.getElementById('import-status').textContent = ''; document.getElementById('apply-import-btn').disabled = true; document.getElementById('import-modal').classList.remove('is-hidden'); }
+    function showImportStatus(message, isError = false) { const status = document.getElementById('import-status'); status.textContent = message; status.classList.add('is-visible'); status.classList.toggle('table-message-error', isError); }
+    async function readOftFile() { const file = document.getElementById('oft-file').files[0]; if (!file) { showImportStatus('Bitte zuerst eine .oft-Datei auswählen.', true); return; } const formData = new FormData(); formData.append('file', file); try { const response = await fetch('/api/email-templates/import-preview', { method: 'POST', body: formData }); const data = await response.json(); if (!data.success) { showImportStatus(data.message || 'Die Datei konnte nicht gelesen werden.', true); return; } importedTemplate = data.email_template; showImportStatus(`Datei gelesen: ${importedTemplate.name}. Die Daten können jetzt übernommen werden.`); document.getElementById('apply-import-btn').disabled = false; } catch (error) { showImportStatus(`Fehler beim Einlesen: ${error.message}`, true); } }
+    async function applyImport(event) { event.preventDefault(); if (!importedTemplate) { showImportStatus('Bitte die Datei zuerst einlesen.', true); return; } try { const response = await fetch('/api/email-templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(importedTemplate) }); const data = await response.json(); if (!data.success) { showImportStatus(data.message || 'Die Vorlage konnte nicht gespeichert werden.', true); return; } closeModal('import-modal'); loadTemplates(); } catch (error) { showImportStatus(`Fehler beim Speichern: ${error.message}`, true); } }
+    function closeModal(id) { document.getElementById(id).classList.add('is-hidden'); }
+    function escapeHtml(value) { const element = document.createElement('span'); element.textContent = value; return element.innerHTML; }
+  </script>
+{% endblock %}

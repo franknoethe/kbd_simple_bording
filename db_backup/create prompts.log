@@ -40,3 +40,14 @@ Erstelle für die Tabelle process_types eine CRUD-Seite mit Navigationseintrag, 
 Erstelle für die Tabelle roles eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id und name. Ich möchte die Tabelle in der Spalte name nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
 
+**********************************************************
+ //* CRUD for email_templates
+*********************************************************
+Erstelle für die Tabelle email_templates eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. 
+Verwende die Spalten ID->id, NAME->name, SUBJEKT->subject, HTML->body_html. body_text und STATUS->active. 
+Am Ende der Tabelle erwarte ich eine Spalte AKTIONEN mit einem Button Vorschau und Import.
+Mit einem Klick auf Vorschau <div> dialog. Hier wird in zwei Feldern sowohl der Inhalt von body_html als auch text_html als preview gerendert.
+Mit einem Klick auf Import kann der Mitarbeiter eine Outlookvorlage .oft wählen die bei einem KLick auf Übernehmen einen neuen Datensatz mit den ausgefüllten Datefeldern subject, body_html und body_text in email_templates anlegt.
+Ich möchte die Tabelle in der Spalte name und subject nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+Es erscheint in den Spalten NAME, SUBJEKT, HTML und TEXT über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.

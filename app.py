@@ -1,7 +1,12 @@
 from flask import Flask, jsonify, render_template, request
+from pathlib import Path
+from io import BytesIO
+from base64 import b64encode
+import re
 import psycopg2
 from psycopg2 import Error
 from psycopg2.extras import RealDictCursor
+import olefile
 
 app = Flask(__name__)
 
@@ -148,6 +153,331 @@ def process_types_page():
 def roles_page():
     """Render roles CRUD page."""
     return render_template("roles.html")
+
+
+@app.route("/email-templates")
+def email_templates_page():
+    """Render email templates CRUD page."""
+    return render_template("email_templates.html")
+
+
+def read_oft_property(ole, property_id):
+    """Read a common MAPI string property from an Outlook OLE file."""
+    for data_type in ("001F", "001E", "001A"):
+        stream_name = f"__substg1.0_{property_id}{data_type}"
+        if ole.exists(stream_name):
+            raw = ole.openstream(stream_name).read()
+            if data_type == "001F":
+                return raw.decode("utf-16-le", errors="replace").rstrip("\x00")
+            return raw.decode("utf-8", errors="replace").rstrip("\x00")
+    return ""
+
+
+def read_oft_body_html(ole):
+    """Read the HTML body property stored by Outlook."""
+    for data_type in ("0102", "001F", "001E", "001A"):
+        stream_name = f"__substg1.0_1013{data_type}"
+        if ole.exists(stream_name):
+            raw = ole.openstream(stream_name).read()
+            if data_type == "0102":
+                for encoding in ("utf-8", "utf-16-le", "cp1252"):
+                    try:
+                        decoded = raw.decode(encoding)
+                        if "<" in decoded or "html" in decoded.lower():
+                            return decoded.rstrip("\x00")
+                    except UnicodeDecodeError:
+                        continue
+                return raw.decode("utf-8", errors="replace").rstrip("\x00")
+            if data_type == "001F":
+                return raw.decode("utf-16-le", errors="replace").rstrip("\x00")
+            return raw.decode("cp1252", errors="replace").rstrip("\x00")
+    return ""
+
+
+def read_oft_stream(ole, directory, stream_name):
+    """Read a stream from an Outlook attachment storage directory."""
+    full_path = list(directory) + [stream_name]
+    if not ole.exists(full_path):
+        return b""
+    return ole.openstream(full_path).read()
+
+
+def read_oft_attachment_property(ole, directory, property_id):
+    """Read a string attachment property from an OFT storage directory."""
+    for data_type, encoding in (("001F", "utf-16-le"), ("001E", "cp1252"), ("001A", "cp1252")):
+        raw = read_oft_stream(ole, directory, f"__substg1.0_{property_id}{data_type}")
+        if raw:
+            return raw.decode(encoding, errors="replace").rstrip("\x00")
+    return ""
+
+
+def read_oft_attachment_binary(ole, directory):
+    """Read the binary payload of an Outlook attachment."""
+    for stream_parts in ole.listdir(streams=True, storages=False):
+        stream_path = tuple(stream_parts)
+        if tuple(stream_path[:-1]) != tuple(directory):
+            continue
+        stream_name = stream_path[-1].lower()
+        if stream_name.endswith("37010102"):
+            return ole.openstream(stream_path).read()
+    return b""
+
+
+def embed_oft_inline_images(ole, body_html):
+    """Replace cid image references with embedded data URLs from OFT attachments."""
+    if not body_html or "cid:" not in body_html:
+        return body_html
+
+    cid_data = {}
+    image_data = []
+    for directory_parts in ole.listdir(storages=True, streams=False):
+        directory = tuple(directory_parts)
+        if not any(part.lower().startswith("__attach") for part in directory):
+            continue
+        content_id = read_oft_attachment_property(ole, directory, "3712")
+        content_location = read_oft_attachment_property(ole, directory, "3713")
+        attachment_data = read_oft_attachment_binary(ole, directory)
+        mime_type = read_oft_attachment_property(ole, directory, "370e") or "application/octet-stream"
+        if attachment_data and mime_type.lower().startswith("image/"):
+            data_url = f"data:{mime_type};base64,{b64encode(attachment_data).decode('ascii')}"
+            image_data.append((len(attachment_data), data_url))
+        if content_id and attachment_data:
+            normalized_id = content_id.strip().strip("<>")
+            data_url = f"data:{mime_type};base64,{b64encode(attachment_data).decode('ascii')}"
+            cid_data[normalized_id.lower()] = data_url
+            if content_location:
+                cid_data[content_location.strip().lower()] = data_url
+
+    largest_image = max(image_data, default=(0, ""), key=lambda item: item[0])[1]
+
+    def replace_cid(match):
+        content_id = match.group(1).strip().strip("<>").lower()
+        data_url = cid_data.get(content_id, "")
+        if data_url.startswith("data:image/"):
+            encoded_payload = data_url.split(",", 1)[-1]
+            if len(encoded_payload) <= 256 and largest_image:
+                data_url = largest_image
+        return data_url or match.group(0)
+
+    return re.sub(r"cid:([^\"'\s>]+)", replace_cid, body_html, flags=re.IGNORECASE)
+
+
+def parse_oft_file(file_storage):
+    """Extract subject, HTML and plain text from an Outlook .oft file."""
+    file_bytes = file_storage.read()
+    if not file_bytes:
+        raise ValueError("Die Outlookvorlage ist leer.")
+
+    try:
+        ole = olefile.OleFileIO(BytesIO(file_bytes))
+    except (OSError, ValueError, olefile.olefile.OleFileError) as error:
+        raise ValueError("Die Datei ist keine gültige Outlookvorlage.") from error
+
+    with ole:
+        subject = read_oft_property(ole, "0037")
+        body_text = read_oft_property(ole, "1000")
+        body_html = read_oft_body_html(ole)
+        body_html = embed_oft_inline_images(ole, body_html)
+
+    name = Path(file_storage.filename or "Vorlage.oft").stem
+    return {
+        "name": name,
+        "subject": subject or name,
+        "body_html": body_html,
+        "body_text": body_text if not body_html else "",
+        "active": True,
+    }
+
+
+@app.route("/api/email-templates", methods=['GET'])
+def get_email_templates():
+    """Get a filtered, sorted page of email templates."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    sort_columns = {'name': 'name', 'subject': 'subject'}
+    sort_key = request.args.get('sort', 'name')
+    direction = 'DESC' if request.args.get('direction', 'asc').lower() == 'desc' else 'ASC'
+    sort_column = sort_columns.get(sort_key, 'name')
+    filters = {
+        'name': request.args.get('name', '').strip(),
+        'subject': request.args.get('subject', '').strip(),
+        'body_html': request.args.get('body_html', '').strip(),
+        'body_text': request.args.get('body_text', '').strip(),
+    }
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 800
+
+    try:
+        where_parts = []
+        values = []
+        for column, value in filters.items():
+            if len(value) >= 3:
+                where_parts.append(f"COALESCE({column}, '') ILIKE %s")
+                values.append(f"%{value}%")
+        where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f"SELECT COUNT(*) AS total FROM email_templates {where_sql}", values)
+        total = cursor.fetchone()['total']
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        cursor.execute(f'''
+            SELECT id, name, subject, body_html, body_text, active
+            FROM email_templates {where_sql}
+            ORDER BY {sort_column} {direction} NULLS LAST, id ASC
+            LIMIT %s OFFSET %s
+        ''', values + [page_size, (page - 1) * page_size])
+        templates = [dict(item) for item in cursor.fetchall()]
+        return jsonify({'success': True, 'email_templates': templates,
+                        'total': total, 'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/email-templates", methods=['POST'])
+def create_email_template():
+    """Create an email template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        subject = str(data.get('subject', '')).strip()
+        body_html = str(data.get('body_html', ''))
+        body_text = str(data.get('body_text', ''))
+        active = bool(data.get('active', True))
+        if not name or not subject:
+            return jsonify({'success': False, 'message': 'Name und Betreff sind erforderlich.'}), 400
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO email_templates (name, subject, body_html, body_text, active)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, name, subject, body_html, body_text, active
+        ''', (name, subject, body_html, body_text, active))
+        template = dict(cursor.fetchone())
+        connection.commit()
+        return jsonify({'success': True, 'email_template': template}), 201
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/email-templates/suggestions", methods=['GET'])
+def get_email_template_suggestions():
+    """Return up to ten matching values for a template filter."""
+    field_map = {'name': 'name', 'subject': 'subject', 'body_html': 'body_html', 'body_text': 'body_text'}
+    field = request.args.get('field', '')
+    query = request.args.get('q', '').strip()
+    if field not in field_map or len(query) < 3:
+        return jsonify({'success': True, 'email_templates': []})
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        column = field_map[field]
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f'''
+            SELECT id, name, subject, body_html, body_text
+            FROM email_templates
+            WHERE COALESCE({column}, '') ILIKE %s
+            ORDER BY {column} ASC NULLS LAST, id ASC
+            LIMIT 10
+        ''', (f'%{query}%',))
+        return jsonify({'success': True, 'email_templates': [dict(item) for item in cursor.fetchall()]})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/email-templates/<int:template_id>", methods=['PUT'])
+def update_email_template(template_id):
+    """Update an email template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        subject = str(data.get('subject', '')).strip()
+        if not name or not subject:
+            return jsonify({'success': False, 'message': 'Name und Betreff sind erforderlich.'}), 400
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE email_templates
+            SET name = %s, subject = %s, body_html = %s, body_text = %s, active = %s
+            WHERE id = %s
+            RETURNING id, name, subject, body_html, body_text, active
+        ''', (name, subject, str(data.get('body_html', '')), str(data.get('body_text', '')),
+              bool(data.get('active', True)), template_id))
+        template = cursor.fetchone()
+        if template is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Vorlage nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True, 'email_template': dict(template)})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/email-templates/<int:template_id>", methods=['DELETE'])
+def delete_email_template(template_id):
+    """Delete an email template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM email_templates WHERE id = %s', (template_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Vorlage nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/email-templates/import-preview", methods=['POST'])
+def preview_email_template_import():
+    """Parse an uploaded Outlook template without writing to the database."""
+    uploaded_file = request.files.get('file')
+    if not uploaded_file or not uploaded_file.filename.lower().endswith('.oft'):
+        return jsonify({'success': False, 'message': 'Bitte eine .oft-Datei auswählen.'}), 400
+    try:
+        return jsonify({'success': True, 'email_template': parse_oft_file(uploaded_file)})
+    except ValueError as error:
+        return jsonify({'success': False, 'message': str(error)}), 400
 
 
 @app.route("/api/roles", methods=['GET'])
