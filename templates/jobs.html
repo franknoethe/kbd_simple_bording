@@ -316,7 +316,7 @@
     }
 
     async function deleteJob(jobId) {
-      if (!window.confirm('Diesen Job wirklich löschen?')) return;
+      if (!await window.showDeleteConfirm('Diesen Job wirklich löschen?')) return;
 
       try {
         const response = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });

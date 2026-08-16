@@ -1,5 +1,5 @@
 :root {
-  --bg: #f3f6fb;
+  --bg: #f3f3f3;
   --panel: #ffffff;
   --panel-alt: #eef4ff;
   --primary: #1b5cff;
@@ -45,7 +45,7 @@ body {
 }
 
 .sidebar {
-  background: #111827;
+  background: #292929;
   color: #fff;
   padding: 28px 18px;
 }
@@ -58,14 +58,11 @@ body {
 }
 
 .brand-mark {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
+  background-image: url(/static/logo_color_s.png);
+  background-repeat: no-repeat;
   width: 36px;
   height: 36px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  font-weight: 700;
+  margin-right: 10px;
 }
 
 .brand strong,
@@ -74,7 +71,7 @@ body {
 }
 
 .brand small {
-  color: #c7d2fe;
+  color: var(--kbd-orange);
 }
 
 .nav {
@@ -85,7 +82,7 @@ body {
 .nav a {
   display: block;
   padding: 12px 14px;
-  color: #dbeafe;
+  color: #cfcfcf;
   text-decoration: none;
   border-radius: 10px;
   transition: 0.2s ease;

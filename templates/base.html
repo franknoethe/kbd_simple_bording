@@ -10,7 +10,7 @@
     <div class="page-shell">
       <aside class="sidebar">
         <div class="brand">
-          <span class="brand-mark">K</span>
+          <div class="brand-mark"></div>
           <div>
             <strong>KBD</strong>
             <small>Simple Boarding</small>
@@ -34,5 +34,35 @@
         {% block content %}{% endblock %}
       </main>
     </div>
+    <div id="global-delete-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="global-delete-title">
+      <div class="modal delete-confirm-modal">
+        <div class="modal-header">
+          <h2 id="global-delete-title">Löschen</h2>
+          <button class="close-btn" id="global-delete-close" type="button" aria-label="Dialog schließen">&times;</button>
+        </div>
+        <p id="global-delete-message">Diesen Datensatz wirklich löschen?</p>
+        <div class="modal-actions">
+          <button class="delete-btn" id="global-delete-confirm" type="button">Löschen</button>
+          <button class="primary-btn" id="global-delete-cancel" type="button">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.showDeleteConfirm = function (message) {
+        const modal = document.getElementById('global-delete-modal');
+        document.getElementById('global-delete-message').textContent = message || 'Diesen Datensatz wirklich löschen?';
+        modal.classList.remove('is-hidden');
+
+        return new Promise(resolve => {
+          const finish = result => {
+            modal.classList.add('is-hidden');
+            resolve(result);
+          };
+          document.getElementById('global-delete-confirm').onclick = () => finish(true);
+          document.getElementById('global-delete-cancel').onclick = () => finish(false);
+          document.getElementById('global-delete-close').onclick = () => finish(false);
+        });
+      };
+    </script>
   </body>
 </html>

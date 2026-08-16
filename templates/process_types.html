@@ -211,7 +211,7 @@
     }
 
     async function deleteProcessType(processTypeId) {
-      if (!window.confirm('Diese Prozessart wirklich löschen?')) return;
+      if (!await window.showDeleteConfirm('Diese Prozessart wirklich löschen?')) return;
       try {
         const response = await fetch(`/api/process-types/${processTypeId}`, { method: 'DELETE' });
         const data = await response.json();

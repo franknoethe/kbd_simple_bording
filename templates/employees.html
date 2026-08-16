@@ -518,7 +518,7 @@
     }
 
     async function deleteEmployee(employeeId) {
-      if (!confirm('Diesen Mitarbeiter wirklich löschen?')) return;
+      if (!await window.showDeleteConfirm('Diesen Mitarbeiter wirklich löschen?')) return;
 
       try {
         const response = await fetch(`/api/employees/${employeeId}`, {

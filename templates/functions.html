@@ -164,7 +164,7 @@
     }
 
     async function deleteFunction(functionId) {
-      if (!window.confirm('Diese Funktion wirklich löschen?')) return;
+      if (!await window.showDeleteConfirm('Diese Funktion wirklich löschen?')) return;
 
       try {
         const response = await fetch(`/api/functions/${functionId}`, { method: 'DELETE' });

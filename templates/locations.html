@@ -179,7 +179,7 @@
     }
 
     async function deleteLocation(locationId) {
-      if (!window.confirm('Diesen Standort wirklich löschen?')) return;
+      if (!await window.showDeleteConfirm('Diesen Standort wirklich löschen?')) return;
 
       try {
         const response = await fetch(`/api/locations/${locationId}`, { method: 'DELETE' });
