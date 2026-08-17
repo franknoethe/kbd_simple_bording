@@ -51,3 +51,32 @@ Mit einem Klick auf Import kann der Mitarbeiter eine Outlookvorlage .oft wählen
 Ich möchte die Tabelle in der Spalte name und subject nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
 Es erscheint in den Spalten NAME, SUBJEKT, HTML und TEXT über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
+
+**********************************************************
+ //* CRUD for templates
+*********************************************************
+Erstelle für die Tabelle templates eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. 
+Verwende die Spalten id->ID, process_type_id->PROZESS, location_id->LOCATION, job_id->JOB,  name->NAME und active->STATUS. 
+Ich möchte die Tabelle in der Spalte ID, PROZESS, LOCATION, JOB, NAME und STATUS nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+Die Datenfelder von process_type_id->process_types.name, location_id->locations.name und job_id->jobs.name werden jewils aufgelöst dargestellt.
+Es erscheint in den Spalten PROZESS, LOCATION, JOB und NAME über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+Im Fall von create und update werden in den Modals Template bearbeiten nach der Wahl in der Combobox LOCATION die Daten der Combobox JOB auf die der location_id angezeigt. 
+Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+Im Fall von create und update werden in den Modals die Daten von process_type_id, location_id und job_id jewils in einer Combobox PROZESS, LOCATION und JOB angezeigt und zu auswahl gestellt.  
+
+
+**********************************************************
+ //* CRUD for template_tasks
+*********************************************************
+Erstelle für die Tabelle template_tasks eine CRUD-Seite als <eybrow>MANAGEMENT <h1>Prozessaufgaben  mit Navigationseintrag, PostgreSQL-API und Formular.
+ 
+Verwende die Spalten id->ID, step->STEP, template_id->VORLAGE, title->TITEL, description->BESCHREIBUNG, due_offset_days->FÄLLIG, responsible_function_id->VERANTWORTLICH, email_template_id->EMAIL und mandatory->PFLICHT.
+
+Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+
+Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee.id und emai-_template_id->email_templates_id werden jeweils aufgelöst dargestellt.
+
+Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
+

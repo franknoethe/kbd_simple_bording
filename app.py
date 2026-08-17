@@ -161,6 +161,259 @@ def email_templates_page():
     return render_template("email_templates.html")
 
 
+@app.route("/templates")
+def templates_page():
+    """Render templates CRUD page."""
+    return render_template("templates.html")
+
+
+@app.route("/api/templates/options", methods=['GET'])
+def get_template_options():
+    """Get combobox options for templates."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM process_types ORDER BY name ASC')
+        process_types = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM locations ORDER BY name ASC')
+        locations = cursor.fetchall()
+        cursor.execute('SELECT id, location_id, name FROM jobs ORDER BY name ASC')
+        jobs = cursor.fetchall()
+        return jsonify({
+            'success': True,
+            'process_types': [dict(item) for item in process_types],
+            'locations': [dict(item) for item in locations],
+            'jobs': [dict(item) for item in jobs],
+        })
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates", methods=['GET'])
+def get_templates():
+    """Get filtered, sorted templates with resolved foreign-key names."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    sort_columns = {
+        'id': 'templates.id',
+        'process_type_id': 'process_types.name',
+        'location_id': 'locations.name',
+        'job_id': 'jobs.name',
+        'name': 'templates.name',
+        'active': 'templates.active',
+    }
+    sort_column = sort_columns.get(request.args.get('sort', 'id'), 'templates.id')
+    direction = 'DESC' if request.args.get('direction', 'asc').lower() == 'desc' else 'ASC'
+    filters = {
+        'process_type_id': request.args.get('process_type_id', '').strip(),
+        'location_id': request.args.get('location_id', '').strip(),
+        'job_id': request.args.get('job_id', '').strip(),
+        'name': request.args.get('name', '').strip(),
+    }
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 800
+
+    try:
+        where_parts = []
+        values = []
+        for column in ('process_type_id', 'location_id', 'job_id'):
+            if filters[column].isdigit():
+                where_parts.append(f'templates.{column} = %s')
+                values.append(int(filters[column]))
+        if len(filters['name']) >= 3:
+            where_parts.append('templates.name ILIKE %s')
+            values.append(f"%{filters['name']}%")
+        where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f'''
+            SELECT COUNT(*) AS total
+            FROM templates
+            LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            LEFT JOIN locations ON locations.id = templates.location_id
+            LEFT JOIN jobs ON jobs.id = templates.job_id
+            {where_sql}
+        ''', values)
+        total = cursor.fetchone()['total']
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        cursor.execute(f'''
+            SELECT templates.id, templates.process_type_id, process_types.name AS process_type_name,
+                   templates.location_id, locations.name AS location_name,
+                   templates.job_id, jobs.name AS job_name,
+                   templates.name, templates.active
+            FROM templates
+            LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            LEFT JOIN locations ON locations.id = templates.location_id
+            LEFT JOIN jobs ON jobs.id = templates.job_id
+            {where_sql}
+            ORDER BY {sort_column} {direction} NULLS LAST, templates.id ASC
+            LIMIT %s OFFSET %s
+        ''', values + [page_size, (page - 1) * page_size])
+        templates = [dict(item) for item in cursor.fetchall()]
+        return jsonify({'success': True, 'templates': templates, 'total': total,
+                        'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates/suggestions", methods=['GET'])
+def get_template_suggestions():
+    """Return up to ten matching template filter suggestions."""
+    field_map = {
+        'process_type_id': ('process_types.id', 'process_types.name'),
+        'location_id': ('locations.id', 'locations.name'),
+        'job_id': ('jobs.id', 'jobs.name'),
+        'name': ('templates.id', 'templates.name'),
+    }
+    field = request.args.get('field', '')
+    query = request.args.get('q', '').strip()
+    if field not in field_map or len(query) < 3:
+        return jsonify({'success': True, 'templates': []})
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        id_column, display_column = field_map[field]
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f'''
+            SELECT DISTINCT {id_column} AS value, {display_column} AS label
+            FROM templates
+            LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            LEFT JOIN locations ON locations.id = templates.location_id
+            LEFT JOIN jobs ON jobs.id = templates.job_id
+            WHERE {display_column} ILIKE %s
+            ORDER BY label ASC NULLS LAST
+            LIMIT 10
+        ''', (f'%{query}%',))
+        return jsonify({'success': True, 'templates': [dict(item) for item in cursor.fetchall()]})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates", methods=['POST'])
+def create_template():
+    """Create a template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        process_type_id = data.get('process_type_id')
+        location_id = data.get('location_id')
+        job_id = data.get('job_id')
+        active = bool(data.get('active', True))
+        if not name or None in (process_type_id, location_id, job_id):
+            return jsonify({'success': False, 'message': 'Prozess, Location, Job und Name sind erforderlich.'}), 400
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO templates (process_type_id, location_id, job_id, name, active)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, process_type_id, location_id, job_id, name, active
+        ''', (int(process_type_id), int(location_id), int(job_id), name, active))
+        template = dict(cursor.fetchone())
+        connection.commit()
+        return jsonify({'success': True, 'template': template}), 201
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Auswahl für Prozess, Location oder Job.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates/<int:template_id>", methods=['PUT'])
+def update_template(template_id):
+    """Update a template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        name = str(data.get('name', '')).strip()
+        process_type_id = data.get('process_type_id')
+        location_id = data.get('location_id')
+        job_id = data.get('job_id')
+        if not name or None in (process_type_id, location_id, job_id):
+            return jsonify({'success': False, 'message': 'Prozess, Location, Job und Name sind erforderlich.'}), 400
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE templates
+            SET process_type_id = %s, location_id = %s, job_id = %s, name = %s, active = %s
+            WHERE id = %s
+            RETURNING id, process_type_id, location_id, job_id, name, active
+        ''', (int(process_type_id), int(location_id), int(job_id), name,
+              bool(data.get('active', True)), template_id))
+        template = cursor.fetchone()
+        if template is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Template nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True, 'template': dict(template)})
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Auswahl für Prozess, Location oder Job.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates/<int:template_id>", methods=['DELETE'])
+def delete_template(template_id):
+    """Delete a template."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM templates WHERE id = %s', (template_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Template nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
 def read_oft_property(ole, property_id):
     """Read a common MAPI string property from an Outlook OLE file."""
     for data_type in ("001F", "001E", "001A"):
