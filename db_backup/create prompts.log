@@ -70,13 +70,9 @@ Im Fall von create und update werden in den Modals die Daten von process_type_id
  //* CRUD for template_tasks
 *********************************************************
 Erstelle für die Tabelle template_tasks eine CRUD-Seite als <eybrow>MANAGEMENT <h1>Prozessaufgaben  mit Navigationseintrag, PostgreSQL-API und Formular.
- 
 Verwende die Spalten id->ID, step->STEP, template_id->VORLAGE, title->TITEL, description->BESCHREIBUNG, due_offset_days->FÄLLIG, responsible_function_id->VERANTWORTLICH, email_template_id->EMAIL und mandatory->PFLICHT.
-
-Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
-
+Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Die sort-buttons  sollen ihren Status sort-btn-active anzeigen wie in jobs.
 Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee.id und emai-_template_id->email_templates_id werden jeweils aufgelöst dargestellt.
-
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
 

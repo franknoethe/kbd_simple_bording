@@ -167,6 +167,217 @@ def templates_page():
     return render_template("templates.html")
 
 
+@app.route("/template-tasks")
+def template_tasks_page():
+    """Render process tasks CRUD page."""
+    return render_template("template_tasks.html")
+
+
+@app.route("/api/template-tasks/options", methods=['GET'])
+def get_template_task_options():
+    """Get combobox options for process tasks."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id, name FROM templates ORDER BY name ASC')
+        templates = cursor.fetchall()
+        cursor.execute('''
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            FROM employees
+            ORDER BY last_name ASC, first_name ASC
+        ''')
+        employees = cursor.fetchall()
+        cursor.execute('SELECT id, name, subject FROM email_templates ORDER BY name ASC')
+        email_templates = cursor.fetchall()
+        return jsonify({
+            'success': True,
+            'templates': [dict(item) for item in templates],
+            'employees': [dict(item) for item in employees],
+            'email_templates': [dict(item) for item in email_templates],
+        })
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/template-tasks", methods=['GET'])
+def get_template_tasks():
+    """Get sorted and paginated process tasks with resolved names."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    sort_columns = {
+        'id': 'template_tasks.id',
+        'step': 'template_tasks.step',
+        'template_id': 'templates.name',
+        'title': 'template_tasks.title',
+        'description': 'template_tasks.description',
+        'due_offset_days': 'template_tasks.due_offset_days',
+        'responsible_function_id': 'employees.last_name',
+        'email_template_id': 'email_templates.name',
+        'mandatory': 'template_tasks.mandatory',
+    }
+    sort_column = sort_columns.get(request.args.get('sort', 'id'), 'template_tasks.id')
+    direction = 'DESC' if request.args.get('direction', 'asc').lower() == 'desc' else 'ASC'
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 800
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        joins = '''
+            FROM template_tasks
+            LEFT JOIN templates ON templates.id = template_tasks.template_id
+            LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
+            LEFT JOIN email_templates ON email_templates.id = template_tasks.email_template_id
+        '''
+        cursor.execute(f'SELECT COUNT(*) AS total {joins}')
+        total = cursor.fetchone()['total']
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        cursor.execute(f'''
+            SELECT template_tasks.id, template_tasks.step, template_tasks.template_id,
+                   templates.name AS template_name, template_tasks.title,
+                   template_tasks.description, template_tasks.due_offset_days,
+                   template_tasks.responsible_function_id,
+                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS responsible_name,
+                   template_tasks.email_template_id,
+                   email_templates.name AS email_template_name,
+                   template_tasks.mandatory
+            {joins}
+            ORDER BY {sort_column} {direction} NULLS LAST, template_tasks.id ASC
+            LIMIT %s OFFSET %s
+        ''', (page_size, (page - 1) * page_size))
+        tasks = [dict(item) for item in cursor.fetchall()]
+        return jsonify({'success': True, 'template_tasks': tasks, 'total': total,
+                        'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/template-tasks", methods=['POST'])
+def create_template_task():
+    """Create a process task."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        task = _template_task_values(data)
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO template_tasks
+                (step, template_id, title, description, due_offset_days,
+                 responsible_function_id, email_template_id, mandatory)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, step, template_id, title, description, due_offset_days,
+                      responsible_function_id, email_template_id, mandatory
+        ''', task)
+        result = dict(cursor.fetchone())
+        connection.commit()
+        return jsonify({'success': True, 'template_task': result}), 201
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Werte für Prozessaufgabe.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+def _template_task_values(data):
+    """Validate and normalize template task input."""
+    required_ids = ('template_id', 'responsible_function_id', 'email_template_id')
+    if any(data.get(field) in (None, '') for field in required_ids):
+        raise ValueError('Referenz fehlt.')
+    title = str(data.get('title', '')).strip()
+    if not title:
+        raise ValueError('Titel fehlt.')
+    return (
+        int(data.get('step', 0)), int(data['template_id']), title,
+        str(data.get('description', '')), int(data.get('due_offset_days', 0)),
+        int(data['responsible_function_id']), int(data['email_template_id']),
+        bool(data.get('mandatory', False)),
+    )
+
+
+@app.route("/api/template-tasks/<int:task_id>", methods=['PUT'])
+def update_template_task(task_id):
+    """Update a process task."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        task = _template_task_values(request.get_json(silent=True) or {})
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE template_tasks
+            SET step = %s, template_id = %s, title = %s, description = %s,
+                due_offset_days = %s, responsible_function_id = %s,
+                email_template_id = %s, mandatory = %s
+            WHERE id = %s
+            RETURNING id, step, template_id, title, description, due_offset_days,
+                      responsible_function_id, email_template_id, mandatory
+        ''', task + (task_id,))
+        result = cursor.fetchone()
+        if result is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozessaufgabe nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True, 'template_task': dict(result)})
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Werte für Prozessaufgabe.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/template-tasks/<int:task_id>", methods=['DELETE'])
+def delete_template_task(task_id):
+    """Delete a process task."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM template_tasks WHERE id = %s', (task_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozessaufgabe nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
 @app.route("/api/templates/options", methods=['GET'])
 def get_template_options():
     """Get combobox options for templates."""

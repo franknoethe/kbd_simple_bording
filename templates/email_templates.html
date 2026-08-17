@@ -140,6 +140,7 @@
       const tbody = document.getElementById('templates-tbody');
       tbody.replaceChildren();
       document.getElementById('template-count').textContent = `${total} Vorlage${total === 1 ? '' : 'n'}`;
+      updateEmailTemplateSortButtons();
       if (!templates.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-message">Keine Vorlagen gefunden.</td></tr>'; }
       templates.forEach(template => {
         const row = document.createElement('tr');
@@ -154,6 +155,12 @@
       document.getElementById('template-page-info').textContent = `Seite ${templatePage} von ${templateTotalPages}`;
       document.getElementById('template-prev-page').disabled = templatePage <= 1;
       document.getElementById('template-next-page').disabled = templatePage >= templateTotalPages;
+    }
+    function updateEmailTemplateSortButtons() {
+      document.querySelectorAll('[data-sort-key]').forEach(button => button.classList.toggle(
+        'sort-btn-active',
+        button.dataset.sortKey === templateSortKey && button.dataset.sortDirection === templateSortDirection
+      ));
     }
 
     function handleFilterInput(input) {
