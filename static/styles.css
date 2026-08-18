@@ -844,3 +844,41 @@ th.th-action {
     flex-direction: column;
   }
 }
+
+@media (max-width: 1920px) {
+  body { font-size: 12px; }
+  .eyebrow,
+  .primary-btn,
+  th,
+  .location-filter input,
+  .location-suggestion,
+  .location-suggestion-empty,
+  .employee-filter input,
+  .employee-suggestion,
+  .employee-suggestion-empty,
+  .badge,
+  .status-pill,
+  .template-filter input,
+  .template-suggestion,
+  .template-suggestion-empty,
+  .secondary-btn,
+  .edit-btn,
+  .delete-btn,
+  .preview-btn,
+  .import-btn,
+  .preview-grid h3 { font-size: 9px; }
+
+  .stat-card span,
+  .pagination-info,
+  .form-group label,
+  .form-message { font-size: 9.75px; }
+
+  .panel-header span,
+  .checkbox-field { font-size: 10.5px; }
+
+  .stat-card strong { font-size: 21px; }
+  .pagination-btn { font-size: 15px; }
+  .sort-btn { font-size: 9.75px; }
+  .close-btn { font-size: 18px; }
+  .text-preview { font-size: 9.75px; }
+}
