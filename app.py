@@ -167,6 +167,12 @@ def templates_page():
     return render_template("templates.html")
 
 
+@app.route("/process-cases")
+def process_cases_page():
+    """Render process cases CRUD page."""
+    return render_template("process_cases.html")
+
+
 @app.route("/template-tasks")
 def template_tasks_page():
     """Render process tasks CRUD page."""
@@ -184,18 +190,14 @@ def get_template_task_options():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('SELECT id, name FROM templates ORDER BY name ASC')
         templates = cursor.fetchall()
-        cursor.execute('''
-            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
-            FROM employees
-            ORDER BY last_name ASC, first_name ASC
-        ''')
-        employees = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM functions ORDER BY name ASC')
+        functions = cursor.fetchall()
         cursor.execute('SELECT id, name, subject FROM email_templates ORDER BY name ASC')
         email_templates = cursor.fetchall()
         return jsonify({
             'success': True,
             'templates': [dict(item) for item in templates],
-            'employees': [dict(item) for item in employees],
+            'functions': [dict(item) for item in functions],
             'email_templates': [dict(item) for item in email_templates],
         })
     except Error as error:
@@ -220,7 +222,7 @@ def get_template_tasks():
         'title': 'template_tasks.title',
         'description': 'template_tasks.description',
         'due_offset_days': 'template_tasks.due_offset_days',
-        'responsible_function_id': 'employees.last_name',
+        'responsible_function_id': 'functions.name',
         'email_template_id': 'email_templates.name',
         'mandatory': 'template_tasks.mandatory',
     }
@@ -236,7 +238,7 @@ def get_template_tasks():
         joins = '''
             FROM template_tasks
             LEFT JOIN templates ON templates.id = template_tasks.template_id
-            LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
+            LEFT JOIN functions ON functions.id = template_tasks.responsible_function_id
             LEFT JOIN email_templates ON email_templates.id = template_tasks.email_template_id
         '''
         cursor.execute(f'SELECT COUNT(*) AS total {joins}')
@@ -248,7 +250,7 @@ def get_template_tasks():
                    templates.name AS template_name, template_tasks.title,
                    template_tasks.description, template_tasks.due_offset_days,
                    template_tasks.responsible_function_id,
-                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS responsible_name,
+                   functions.name AS responsible_name,
                    template_tasks.email_template_id,
                    email_templates.name AS email_template_name,
                    template_tasks.mandatory
@@ -301,19 +303,55 @@ def create_template_task():
         connection.close()
 
 
+def _coerce_int(value, default=0):
+    """Convert form values to int while tolerating blank strings."""
+    if value is None or value == '':
+        return default
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        return int(value)
+    value = str(value).strip()
+    if not value:
+        return default
+    return int(value)
+
+
+def _coerce_bool(value, default=False):
+    """Convert form values to bool while tolerating common string forms."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return bool(value)
+    text = str(value).strip().lower()
+    if text in ('', 'false', '0', 'no', 'off', 'null'):
+        return False
+    if text in ('true', '1', 'yes', 'y', 'on'):
+        return True
+    return bool(text)
+
+
 def _template_task_values(data):
     """Validate and normalize template task input."""
     required_ids = ('template_id', 'responsible_function_id', 'email_template_id')
-    if any(data.get(field) in (None, '') for field in required_ids):
-        raise ValueError('Referenz fehlt.')
+    for field in required_ids:
+        value = data.get(field)
+        if value is None or str(value).strip() == '':
+            raise ValueError('Referenz fehlt.')
     title = str(data.get('title', '')).strip()
     if not title:
         raise ValueError('Titel fehlt.')
     return (
-        int(data.get('step', 0)), int(data['template_id']), title,
-        str(data.get('description', '')), int(data.get('due_offset_days', 0)),
-        int(data['responsible_function_id']), int(data['email_template_id']),
-        bool(data.get('mandatory', False)),
+        _coerce_int(data.get('step', 0), 0),
+        _coerce_int(data['template_id'], 0),
+        title,
+        str(data.get('description', '')).strip(),
+        _coerce_int(data.get('due_offset_days', 0), 0),
+        _coerce_int(data['responsible_function_id'], 0),
+        _coerce_int(data['email_template_id'], 0),
+        _coerce_bool(data.get('mandatory', False), False),
     )
 
 
@@ -614,6 +652,233 @@ def delete_template(template_id):
         if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Template nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-cases/options", methods=['GET'])
+def get_process_case_options():
+    """Get employee and process-template options for process cases."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            FROM employees
+            ORDER BY last_name ASC, first_name ASC
+        ''')
+        employees = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM templates ORDER BY name ASC')
+        templates = cursor.fetchall()
+        return jsonify({'success': True,
+                        'employees': [dict(item) for item in employees],
+                        'templates': [dict(item) for item in templates]})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-cases", methods=['GET'])
+def get_process_cases():
+    """Get filtered, sorted and paginated process cases."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    sort_columns = {
+        'id': 'process_cases.id',
+        'employee_id': 'employees.last_name',
+        'start_date': 'process_cases.start_date',
+        'created_at': 'process_cases.created_at',
+    }
+    sort_column = sort_columns.get(request.args.get('sort', 'id'), 'process_cases.id')
+    direction = 'DESC' if request.args.get('direction', 'asc').lower() == 'desc' else 'ASC'
+    filters = {
+        'employee_id': request.args.get('employee_id', '').strip(),
+        'template_id': request.args.get('template_id', '').strip(),
+    }
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 800
+
+    try:
+        where_parts = []
+        values = []
+        for column in ('employee_id', 'template_id'):
+            if filters[column].isdigit():
+                where_parts.append(f'process_cases.{column} = %s')
+                values.append(int(filters[column]))
+        where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
+        joins = '''
+            FROM process_cases
+            LEFT JOIN employees ON employees.id = process_cases.employee_id
+            LEFT JOIN templates ON templates.id = process_cases.template_id
+        '''
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f'SELECT COUNT(*) AS total {joins} {where_sql}', values)
+        total = cursor.fetchone()['total']
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        cursor.execute(f'''
+            SELECT process_cases.id, process_cases.employee_id,
+                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS employee_name,
+                   process_cases.template_id, templates.name AS template_name,
+                   process_cases.start_date, process_cases.created_at, process_cases.status
+            {joins}
+            {where_sql}
+            ORDER BY {sort_column} {direction} NULLS LAST, process_cases.id ASC
+            LIMIT %s OFFSET %s
+        ''', values + [page_size, (page - 1) * page_size])
+        cases = [dict(item) for item in cursor.fetchall()]
+        return jsonify({'success': True, 'process_cases': cases, 'total': total,
+                        'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-cases/suggestions", methods=['GET'])
+def get_process_case_suggestions():
+    """Return up to ten employee or template filter suggestions."""
+    field_map = {
+        'employee_id': ('employees.id', "CONCAT_WS(' ', employees.first_name, employees.last_name)"),
+        'template_id': ('templates.id', 'templates.name'),
+    }
+    field = request.args.get('field', '')
+    query = request.args.get('q', '').strip()
+    if field not in field_map or len(query) < 3:
+        return jsonify({'success': True, 'process_cases': []})
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        id_column, display_column = field_map[field]
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(f'''
+            SELECT DISTINCT {id_column} AS value, {display_column} AS label
+            FROM process_cases
+            LEFT JOIN employees ON employees.id = process_cases.employee_id
+            LEFT JOIN templates ON templates.id = process_cases.template_id
+            WHERE {display_column} ILIKE %s
+            ORDER BY label ASC NULLS LAST
+            LIMIT 10
+        ''', (f'%{query}%',))
+        return jsonify({'success': True, 'process_cases': [dict(item) for item in cursor.fetchall()]})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+def _process_case_values(data):
+    """Validate and normalize process case input."""
+    employee_id = data.get('employee_id')
+    template_id = data.get('template_id')
+    start_date = str(data.get('start_date', '')).strip()
+    if employee_id in (None, '') or template_id in (None, '') or not start_date:
+        raise ValueError('Mitarbeiter, Prozessvorlage und Startdatum sind erforderlich.')
+    return int(employee_id), int(template_id), start_date
+
+
+@app.route("/api/process-cases", methods=['POST'])
+def create_process_case():
+    """Create a process case."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        employee_id, template_id, start_date = _process_case_values(request.get_json(silent=True) or {})
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            INSERT INTO process_cases (employee_id, template_id, start_date)
+            VALUES (%s, %s, %s)
+            RETURNING id, employee_id, template_id, start_date, created_at, status
+        ''', (employee_id, template_id, start_date))
+        process_case = dict(cursor.fetchone())
+        connection.commit()
+        return jsonify({'success': True, 'process_case': process_case}), 201
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Werte für den Prozess.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-cases/<int:case_id>", methods=['PUT'])
+def update_process_case(case_id):
+    """Update a process case."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        employee_id, template_id, start_date = _process_case_values(request.get_json(silent=True) or {})
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            UPDATE process_cases
+            SET employee_id = %s, template_id = %s, start_date = %s
+            WHERE id = %s
+            RETURNING id, employee_id, template_id, start_date, created_at, status
+        ''', (employee_id, template_id, start_date, case_id))
+        process_case = cursor.fetchone()
+        if process_case is None:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozess nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True, 'process_case': dict(process_case)})
+    except (TypeError, ValueError):
+        connection.rollback()
+        return jsonify({'success': False, 'message': 'Ungültige Werte für den Prozess.'}), 400
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/process-cases/<int:case_id>", methods=['DELETE'])
+def delete_process_case(case_id):
+    """Delete a process case."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM process_cases WHERE id = %s', (case_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Prozess nicht gefunden.'}), 404
         connection.commit()
         return jsonify({'success': True})
     except Error as error:

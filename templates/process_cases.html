@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Prozesse{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div><p class="eyebrow">MANAGEMENT</p><h1>Prozesse</h1></div>
+    <button class="primary-btn" id="add-case-btn" type="button">Neuen Prozess anlegen</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header"><h2>Prozessliste</h2><span id="case-count">0 Prozesse</span></div>
+    <div class="table-wrap">
+      <table class="process-case-table">
+        <thead><tr>
+          <th><span class="sortable-heading">ID <span class="sort-buttons"><button class="sort-btn" data-sort-key="id" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="id" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
+          <th><div class="template-filter"><input type="search" data-filter-field="employee_id" placeholder="MITARBEITER suchen" aria-label="MITARBEITER suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">MITARBEITER <span class="sort-buttons"><button class="sort-btn" data-sort-key="employee_id" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="employee_id" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
+          <th><div class="template-filter"><input type="search" data-filter-field="template_id" placeholder="PROZESSVORLAGE suchen" aria-label="PROZESSVORLAGE suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">PROZESSVORLAGE <span class="sort-buttons"><button class="sort-btn" data-sort-key="template_id" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="template_id" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
+          <th><span class="sortable-heading">STARTDATUM <span class="sort-buttons"><button class="sort-btn" data-sort-key="start_date" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="start_date" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
+          <th><span class="sortable-heading">ERSTELLT <span class="sort-buttons"><button class="sort-btn" data-sort-key="created_at" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="created_at" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
+          <th>AKTIONEN</th>
+        </tr></thead>
+        <tbody id="cases-tbody"><tr><td colspan="6" class="table-message">Lädt...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="case-pagination" class="table-pagination is-hidden" aria-label="Prozessnavigation"><button class="pagination-btn" id="case-prev" type="button" aria-label="Vorheriges Datenpaket">←</button><span class="pagination-info" id="case-page-info"></span><button class="pagination-btn" id="case-next" type="button" aria-label="Nächstes Datenpaket">→</button></div>
+  </section>
+
+  <div id="case-modal" class="modal-overlay is-hidden"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="case-modal-title">
+    <div class="modal-header"><h2 id="case-modal-title">Neuen Prozess anlegen</h2><button class="close-btn" data-close="case-modal" type="button" aria-label="Dialog schließen">&times;</button></div>
+    <form id="case-form">
+      <input type="hidden" id="case-id">
+      <div class="form-group"><label for="case-employee">MITARBEITER</label><select id="case-employee" required><option value="">Bitte auswählen</option></select></div>
+      <div class="form-group"><label for="case-template">PROZESSVORLAGE</label><select id="case-template" required><option value="">Bitte auswählen</option></select></div>
+      <div class="form-group"><label for="case-start-date">STARTDATUM</label><input id="case-start-date" type="date" required></div>
+      <p id="case-form-message" class="form-message"></p>
+      <div class="modal-actions"><button class="primary-btn" type="submit">Speichern</button><button class="secondary-btn" data-close="case-modal" type="button">Abbrechen</button></div>
+    </form>
+  </div></div>
+
+  <script>
+    let processCases = [];
+    let casePage = 1;
+    let caseTotalPages = 1;
+    let caseSortKey = 'id';
+    let caseSortDirection = 'asc';
+    const caseFilters = { employee_id: '', template_id: '' };
+    const caseFilterTimers = new Map();
+    let caseOptions = { employees: [], templates: [] };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadCaseOptions();
+      loadProcessCases();
+      document.getElementById('add-case-btn').addEventListener('click', () => openCaseModal());
+      document.getElementById('case-form').addEventListener('submit', saveCase);
+      document.getElementById('case-prev').addEventListener('click', () => changeCasePage(-1));
+      document.getElementById('case-next').addEventListener('click', () => changeCasePage(1));
+      document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeCaseModal(button.dataset.close)));
+      document.querySelectorAll('[data-sort-key]').forEach(button => button.addEventListener('click', () => { caseSortKey = button.dataset.sortKey; caseSortDirection = button.dataset.sortDirection; casePage = 1; loadProcessCases(); }));
+      document.querySelectorAll('[data-filter-field]').forEach(input => input.addEventListener('input', () => handleCaseFilterInput(input)));
+      document.addEventListener('click', event => { if (!event.target.closest('.template-filter')) document.querySelectorAll('.template-suggestions').forEach(item => item.classList.add('is-hidden')); });
+    });
+    async function loadCaseOptions() { const response = await fetch('/api/process-cases/options'); const data = await response.json(); if (!data.success) throw new Error(data.message || 'Optionen konnten nicht geladen werden.'); caseOptions = data; fillCaseSelect('case-employee', data.employees, item => item.name); fillCaseSelect('case-template', data.templates, item => item.name); }
+    function fillCaseSelect(id, items, labeler) { const select = document.getElementById(id); select.innerHTML = '<option value="">Bitte auswählen</option>'; items.forEach(item => { const option = document.createElement('option'); option.value = item.id; option.textContent = labeler(item); select.appendChild(option); }); }
+    async function loadProcessCases() { const params = new URLSearchParams({ page: casePage, sort: caseSortKey, direction: caseSortDirection }); Object.entries(caseFilters).forEach(([key, value]) => { if (value) params.set(key, value); }); try { const response = await fetch(`/api/process-cases?${params}`); const data = await response.json(); if (!data.success) throw new Error(data.message || 'Prozesse konnten nicht geladen werden.'); processCases = data.process_cases; casePage = data.page; caseTotalPages = data.total_pages; renderProcessCases(data.total); } catch (error) { document.getElementById('cases-tbody').innerHTML = `<tr><td colspan="6" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`; } }
+    function renderProcessCases(total) { const tbody = document.getElementById('cases-tbody'); tbody.replaceChildren(); document.getElementById('case-count').textContent = `${total} Prozess${total === 1 ? '' : 'e'}`; updateCaseSortButtons(); if (!processCases.length) tbody.innerHTML = '<tr><td colspan="6" class="table-message">Keine Prozesse gefunden.</td></tr>'; processCases.forEach(processCase => { const row = document.createElement('tr'); row.innerHTML = `<td>${processCase.id}</td><td>${escapeHtml(processCase.employee_name || '')}</td><td>${escapeHtml(processCase.template_name || '')}</td><td>${formatDate(processCase.start_date)}</td><td>${formatDateTime(processCase.created_at)}</td><td class="action-btns"><button class="edit-btn" type="button">Bearbeiten</button><button class="delete-btn" type="button">Löschen</button></td>`; row.querySelector('.edit-btn').addEventListener('click', () => openCaseModal(processCase)); row.querySelector('.delete-btn').addEventListener('click', () => deleteCase(processCase.id)); tbody.appendChild(row); }); const pagination = document.getElementById('case-pagination'); pagination.classList.toggle('is-hidden', total <= 800); document.getElementById('case-page-info').textContent = `Seite ${casePage} von ${caseTotalPages}`; document.getElementById('case-prev').disabled = casePage <= 1; document.getElementById('case-next').disabled = casePage >= caseTotalPages; }
+    function updateCaseSortButtons() { document.querySelectorAll('[data-sort-key]').forEach(button => button.classList.toggle('sort-btn-active', button.dataset.sortKey === caseSortKey && button.dataset.sortDirection === caseSortDirection)); }
+    function handleCaseFilterInput(input) { const field = input.dataset.filterField; const suggestions = input.nextElementSibling; clearTimeout(caseFilterTimers.get(field)); const value = input.value.trim(); if (value.length < 3) { caseFilters[field] = ''; suggestions.classList.add('is-hidden'); casePage = 1; loadProcessCases(); return; } caseFilterTimers.set(field, setTimeout(() => loadCaseSuggestions(field, value, suggestions), 220)); }
+    async function loadCaseSuggestions(field, value, container) { const response = await fetch(`/api/process-cases/suggestions?field=${encodeURIComponent(field)}&q=${encodeURIComponent(value)}`); const data = await response.json(); container.replaceChildren(); (data.process_cases || []).forEach(item => { const button = document.createElement('button'); button.type = 'button'; button.className = 'template-suggestion'; button.textContent = item.label || '(leer)'; button.addEventListener('click', () => { document.querySelector(`[data-filter-field="${field}"]`).value = item.label || ''; caseFilters[field] = item.value; container.classList.add('is-hidden'); casePage = 1; loadProcessCases(); }); container.appendChild(button); }); if (!container.children.length) { const empty = document.createElement('span'); empty.className = 'template-suggestion-empty'; empty.textContent = 'Keine Treffer'; container.appendChild(empty); } container.classList.remove('is-hidden'); }
+    function openCaseModal(processCase = null) { document.getElementById('case-modal-title').textContent = processCase ? 'Prozess bearbeiten' : 'Neuen Prozess anlegen'; document.getElementById('case-id').value = processCase?.id || ''; document.getElementById('case-employee').value = processCase?.employee_id || ''; document.getElementById('case-template').value = processCase?.template_id || ''; document.getElementById('case-start-date').value = processCase?.start_date ? String(processCase.start_date).slice(0, 10) : ''; document.getElementById('case-form-message').textContent = ''; document.getElementById('case-modal').classList.remove('is-hidden'); }
+    async function saveCase(event) { event.preventDefault(); const id = document.getElementById('case-id').value; const payload = { employee_id: document.getElementById('case-employee').value, template_id: document.getElementById('case-template').value, start_date: document.getElementById('case-start-date').value }; const response = await fetch(`/api/process-cases${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await response.json(); if (!data.success) { document.getElementById('case-form-message').textContent = data.message; return; } closeCaseModal('case-modal'); loadProcessCases(); }
+    async function deleteCase(id) { if (!await window.showDeleteConfirm('Diesen Prozess wirklich löschen?')) return; const response = await fetch(`/api/process-cases/${id}`, { method: 'DELETE' }); if (response.ok) loadProcessCases(); }
+    function changeCasePage(delta) { casePage = Math.max(1, Math.min(caseTotalPages, casePage + delta)); loadProcessCases(); }
+    function closeCaseModal(id) { document.getElementById(id).classList.add('is-hidden'); }
+    function formatDate(value) { if (!value) return ''; return String(value).slice(0, 10); }
+    function formatDateTime(value) { if (!value) return ''; return String(value).replace('T', ' ').slice(0, 19); }
+    function escapeHtml(value) { const element = document.createElement('span'); element.textContent = value; return element.innerHTML; }
+  </script>
+{% endblock %}

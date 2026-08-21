@@ -504,7 +504,6 @@
           });
           const data = await response.json();
           if (data.success) {
-            alert('Mitarbeiter erstellt');
             closeModal();
             loadEmployees();
           } else {
@@ -526,7 +525,6 @@
         });
         const data = await response.json();
         if (data.success) {
-          alert('Mitarbeiter gelöscht');
           loadEmployees();
         } else {
           alert('Fehler: ' + data.message);

@@ -21,12 +21,12 @@ Schreibe mir einen Datensatz-Filter für die jobliste. Es erscheint in der Spalt
  //* Changes for employees
 *********************************************************
 In der Tabelle Mitarbeiter möchte ich die Spalten vorname, nachname und abteilung nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
-
 Erweitere mir die Tabelle mitarbeiterliste mit den Spalten Standort -> location_id, Job -> job_id, Rolle -> role_id und Funktion -> function_id. 
 Schreibe mir einen Datensatz-Filter für die Mtarbeiterliste. Es erscheint in den Spalten Nachname, Standort, Job, Rolle und Funktion unter der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Mitarbeiterliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
-
 Im Fall von create und update werden in den Modals Neuer Mitarbeiter und Mitarbeiter bearbeiten nach der Wahl in der Combobox Standort die Daten der Combobox Job auf die der standort_id angezeigt.  
-
+//*** Nachträgliche Änderung ***
+schreibe mir ein css meldefenster und nicht die msgbox aus java für darensatz löschen in mitarbeiter, standorte, funktionen, jobs. prozessarten, rollen wie in e-mail-vorlagen
+Entferne die javameldung nach dem speichern von Neuer Mitarbeiter unter MITARBEITER
 
 **********************************************************
  //* CRUD for process_types
@@ -76,3 +76,13 @@ Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
 
+**********************************************************
+ //* CRUD for process_cases
+*********************************************************
+Erstelle für die Tabelle process_cases eine CRUD-Seite als <eybrow>MANAGEMENT <h1>Prozesse  mit Navigationseintrag, PostgreSQL-API und Formular.
+Verwende die Spalten id->ID, employee_id->MITARBEITER, template_id->PROZESSVORLAGE, startdate->STARTDATUM und created_at->ERSTELLT.
+Ich möchte die Tabelle in der Spalte ID, MITARBEITER, STARTDATUM und ERSTELLT nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Die sort-buttons  sollen ihren Status sort-btn-active anzeigen wie in jobs.
+Die Datenfelder von tamplate_id->templates.id, employee_id->employee.id werden jeweils aufgelöst dargestellt.
+Es erscheint in den Spalten MITARBEIER und PROZESSVORLAGE über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+Im Fall von create und update werden in den Modals die Daten von employee_id und tamplate_id in einer Combobox MITARBEITER und PROZESSVORLAGE angezeigt und zu auswahl gestellt.  
+Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
