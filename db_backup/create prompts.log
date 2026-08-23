@@ -86,3 +86,4 @@ Die Datenfelder von tamplate_id->templates.id, employee_id->employee.id werden j
 Es erscheint in den Spalten MITARBEIER und PROZESSVORLAGE über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 Im Fall von create und update werden in den Modals die Daten von employee_id und tamplate_id in einer Combobox MITARBEITER und PROZESSVORLAGE angezeigt und zu auswahl gestellt.  
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
