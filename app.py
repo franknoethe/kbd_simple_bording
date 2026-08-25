@@ -3,26 +3,34 @@ from pathlib import Path
 from io import BytesIO
 from base64 import b64encode
 import re
-import psycopg2
-from psycopg2 import Error
-from psycopg2.extras import RealDictCursor
+import pymysql
+from pymysql import Error
+from pymysql.cursors import DictCursor as RealDictCursor
+from pymysql.constants import CLIENT
 import olefile
 
 app = Flask(__name__)
 
-# PostgreSQL Database Configuration
+# MariaDB Database Configuration
 DB_CONFIG = {
     'host': '127.0.0.1',
-    'user': 'postgres',
-    'password': 'root',
+    'user': 'root',
+    'password': '',
     'database': 'kbd_hr_boarding',
-    'port': 5432
+    'port': 3306
 }
+
+
+class _Connection(pymysql.connections.Connection):
+    """Accepts the psycopg2-style cursor_factory kwarg used throughout this file."""
+    def cursor(self, cursor=None, cursor_factory=None):
+        return super().cursor(cursor_factory or cursor)
+
 
 def get_db_connection():
     """Create and return a database connection"""
     try:
-        connection = psycopg2.connect(**DB_CONFIG)
+        connection = _Connection(client_flag=CLIENT.FOUND_ROWS, **DB_CONFIG)
         return connection
     except Error as e:
         print(f"Error connecting to database: {e}")
@@ -253,7 +261,7 @@ def get_template_tasks():
                    email_templates.name AS email_template_name,
                    template_tasks.mandatory
             {joins}
-            ORDER BY {sort_column} {direction} NULLS LAST, template_tasks.id ASC
+            ORDER BY {sort_column} {direction}, template_tasks.id ASC
             LIMIT %s OFFSET %s
         ''', (page_size, (page - 1) * page_size))
         tasks = [dict(item) for item in cursor.fetchall()]
@@ -283,10 +291,11 @@ def create_template_task():
                 (step, template_id, title, description, due_offset_days,
                  responsible_function_id, email_template_id, mandatory)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, step, template_id, title, description, due_offset_days,
-                      responsible_function_id, email_template_id, mandatory
         ''', task)
-        result = dict(cursor.fetchone())
+        keys = ('step', 'template_id', 'title', 'description', 'due_offset_days',
+                'responsible_function_id', 'email_template_id', 'mandatory')
+        result = dict(zip(keys, task))
+        result['id'] = cursor.lastrowid
         connection.commit()
         return jsonify({'success': True, 'template_task': result}), 201
     except (TypeError, ValueError):
@@ -333,15 +342,16 @@ def update_template_task(task_id):
                 due_offset_days = %s, responsible_function_id = %s,
                 email_template_id = %s, mandatory = %s
             WHERE id = %s
-            RETURNING id, step, template_id, title, description, due_offset_days,
-                      responsible_function_id, email_template_id, mandatory
         ''', task + (task_id,))
-        result = cursor.fetchone()
-        if result is None:
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Prozessaufgabe nicht gefunden.'}), 404
+        keys = ('step', 'template_id', 'title', 'description', 'due_offset_days',
+                'responsible_function_id', 'email_template_id', 'mandatory')
+        result = dict(zip(keys, task))
+        result['id'] = task_id
         connection.commit()
-        return jsonify({'success': True, 'template_task': dict(result)})
+        return jsonify({'success': True, 'template_task': result})
     except (TypeError, ValueError):
         connection.rollback()
         return jsonify({'success': False, 'message': 'Ungültige Werte für Prozessaufgabe.'}), 400
@@ -445,7 +455,7 @@ def get_templates():
                 where_parts.append(f'templates.{column} = %s')
                 values.append(int(filters[column]))
         if len(filters['name']) >= 3:
-            where_parts.append('templates.name ILIKE %s')
+            where_parts.append('templates.name LIKE %s')
             values.append(f"%{filters['name']}%")
         where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
         cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -470,7 +480,7 @@ def get_templates():
             LEFT JOIN locations ON locations.id = templates.location_id
             LEFT JOIN jobs ON jobs.id = templates.job_id
             {where_sql}
-            ORDER BY {sort_column} {direction} NULLS LAST, templates.id ASC
+            ORDER BY {sort_column} {direction}, templates.id ASC
             LIMIT %s OFFSET %s
         ''', values + [page_size, (page - 1) * page_size])
         templates = [dict(item) for item in cursor.fetchall()]
@@ -510,8 +520,8 @@ def get_template_suggestions():
             LEFT JOIN process_types ON process_types.id = templates.process_type_id
             LEFT JOIN locations ON locations.id = templates.location_id
             LEFT JOIN jobs ON jobs.id = templates.job_id
-            WHERE {display_column} ILIKE %s
-            ORDER BY label ASC NULLS LAST
+            WHERE {display_column} LIKE %s
+            ORDER BY label ASC
             LIMIT 10
         ''', (f'%{query}%',))
         return jsonify({'success': True, 'templates': [dict(item) for item in cursor.fetchall()]})
@@ -543,9 +553,12 @@ def create_template():
         cursor.execute('''
             INSERT INTO templates (process_type_id, location_id, job_id, name, active)
             VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, process_type_id, location_id, job_id, name, active
         ''', (int(process_type_id), int(location_id), int(job_id), name, active))
-        template = dict(cursor.fetchone())
+        template = {
+            'id': cursor.lastrowid, 'process_type_id': int(process_type_id),
+            'location_id': int(location_id), 'job_id': int(job_id),
+            'name': name, 'active': active,
+        }
         connection.commit()
         return jsonify({'success': True, 'template': template}), 201
     except (TypeError, ValueError):
@@ -575,20 +588,23 @@ def update_template(template_id):
         job_id = data.get('job_id')
         if not name or None in (process_type_id, location_id, job_id):
             return jsonify({'success': False, 'message': 'Prozess, Location, Job und Name sind erforderlich.'}), 400
+        active = bool(data.get('active', True))
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
             UPDATE templates
             SET process_type_id = %s, location_id = %s, job_id = %s, name = %s, active = %s
             WHERE id = %s
-            RETURNING id, process_type_id, location_id, job_id, name, active
-        ''', (int(process_type_id), int(location_id), int(job_id), name,
-              bool(data.get('active', True)), template_id))
-        template = cursor.fetchone()
-        if template is None:
+        ''', (int(process_type_id), int(location_id), int(job_id), name, active, template_id))
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Template nicht gefunden.'}), 404
+        template = {
+            'id': template_id, 'process_type_id': int(process_type_id),
+            'location_id': int(location_id), 'job_id': int(job_id),
+            'name': name, 'active': active,
+        }
         connection.commit()
-        return jsonify({'success': True, 'template': dict(template)})
+        return jsonify({'success': True, 'template': template})
     except (TypeError, ValueError):
         connection.rollback()
         return jsonify({'success': False, 'message': 'Ungültige Auswahl für Prozess, Location oder Job.'}), 400
@@ -782,7 +798,7 @@ def get_email_templates():
         values = []
         for column, value in filters.items():
             if len(value) >= 3:
-                where_parts.append(f"COALESCE({column}, '') ILIKE %s")
+                where_parts.append(f"COALESCE({column}, '') LIKE %s")
                 values.append(f"%{value}%")
         where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
         cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -793,7 +809,7 @@ def get_email_templates():
         cursor.execute(f'''
             SELECT id, name, subject, body_html, body_text, active
             FROM email_templates {where_sql}
-            ORDER BY {sort_column} {direction} NULLS LAST, id ASC
+            ORDER BY {sort_column} {direction}, id ASC
             LIMIT %s OFFSET %s
         ''', values + [page_size, (page - 1) * page_size])
         templates = [dict(item) for item in cursor.fetchall()]
@@ -827,9 +843,11 @@ def create_email_template():
         cursor.execute('''
             INSERT INTO email_templates (name, subject, body_html, body_text, active)
             VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, name, subject, body_html, body_text, active
         ''', (name, subject, body_html, body_text, active))
-        template = dict(cursor.fetchone())
+        template = {
+            'id': cursor.lastrowid, 'name': name, 'subject': subject,
+            'body_html': body_html, 'body_text': body_text, 'active': active,
+        }
         connection.commit()
         return jsonify({'success': True, 'email_template': template}), 201
     except Error as error:
@@ -859,8 +877,8 @@ def get_email_template_suggestions():
         cursor.execute(f'''
             SELECT id, name, subject, body_html, body_text
             FROM email_templates
-            WHERE COALESCE({column}, '') ILIKE %s
-            ORDER BY {column} ASC NULLS LAST, id ASC
+            WHERE COALESCE({column}, '') LIKE %s
+            ORDER BY {column} ASC, id ASC
             LIMIT 10
         ''', (f'%{query}%',))
         return jsonify({'success': True, 'email_templates': [dict(item) for item in cursor.fetchall()]})
@@ -890,15 +908,18 @@ def update_email_template(template_id):
             UPDATE email_templates
             SET name = %s, subject = %s, body_html = %s, body_text = %s, active = %s
             WHERE id = %s
-            RETURNING id, name, subject, body_html, body_text, active
         ''', (name, subject, str(data.get('body_html', '')), str(data.get('body_text', '')),
               bool(data.get('active', True)), template_id))
-        template = cursor.fetchone()
-        if template is None:
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Vorlage nicht gefunden.'}), 404
+        template = {
+            'id': template_id, 'name': name, 'subject': subject,
+            'body_html': str(data.get('body_html', '')), 'body_text': str(data.get('body_text', '')),
+            'active': bool(data.get('active', True)),
+        }
         connection.commit()
-        return jsonify({'success': True, 'email_template': dict(template)})
+        return jsonify({'success': True, 'email_template': template})
     except Error as error:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
@@ -980,14 +1001,10 @@ def create_role():
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            INSERT INTO roles (name)
-            VALUES (%s)
-            RETURNING id, name
-        ''', (name,))
-        role = cursor.fetchone()
+        cursor.execute('INSERT INTO roles (name) VALUES (%s)', (name,))
+        role = {'id': cursor.lastrowid, 'name': name}
         connection.commit()
-        return jsonify({'success': True, 'role': dict(role)}), 201
+        return jsonify({'success': True, 'role': role}), 201
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1012,19 +1029,13 @@ def update_role(role_id):
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            UPDATE roles
-            SET name = %s
-            WHERE id = %s
-            RETURNING id, name
-        ''', (name, role_id))
-        role = cursor.fetchone()
-        if role is None:
+        cursor.execute('UPDATE roles SET name = %s WHERE id = %s', (name, role_id))
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Rolle nicht gefunden.'}), 404
 
         connection.commit()
-        return jsonify({'success': True, 'role': dict(role)})
+        return jsonify({'success': True, 'role': {'id': role_id, 'name': name}})
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1096,14 +1107,10 @@ def create_process_type():
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            INSERT INTO process_types (name)
-            VALUES (%s)
-            RETURNING id, name
-        ''', (name,))
-        process_type = cursor.fetchone()
+        cursor.execute('INSERT INTO process_types (name) VALUES (%s)', (name,))
+        process_type = {'id': cursor.lastrowid, 'name': name}
         connection.commit()
-        return jsonify({'success': True, 'process_type': dict(process_type)}), 201
+        return jsonify({'success': True, 'process_type': process_type}), 201
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1128,19 +1135,13 @@ def update_process_type(process_type_id):
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            UPDATE process_types
-            SET name = %s
-            WHERE id = %s
-            RETURNING id, name
-        ''', (name, process_type_id))
-        process_type = cursor.fetchone()
-        if process_type is None:
+        cursor.execute('UPDATE process_types SET name = %s WHERE id = %s', (name, process_type_id))
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Prozessart nicht gefunden.'}), 404
 
         connection.commit()
-        return jsonify({'success': True, 'process_type': dict(process_type)})
+        return jsonify({'success': True, 'process_type': {'id': process_type_id, 'name': name}})
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1243,11 +1244,10 @@ def create_job():
         cursor.execute('''
             INSERT INTO jobs (location_id, name)
             VALUES (%s, %s)
-            RETURNING id, location_id, name
         ''', (int(location_id), name))
-        job = cursor.fetchone()
+        job = {'id': cursor.lastrowid, 'location_id': int(location_id), 'name': name}
         connection.commit()
-        return jsonify({'success': True, 'job': dict(job)}), 201
+        return jsonify({'success': True, 'job': job}), 201
     except (ValueError, TypeError):
         connection.rollback()
         return jsonify({'success': False, 'message': 'Ungültiger Standort.'}), 400
@@ -1280,15 +1280,13 @@ def update_job(job_id):
             UPDATE jobs
             SET location_id = %s, name = %s
             WHERE id = %s
-            RETURNING id, location_id, name
         ''', (int(location_id), name, job_id))
-        job = cursor.fetchone()
-        if job is None:
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Job nicht gefunden.'}), 404
 
         connection.commit()
-        return jsonify({'success': True, 'job': dict(job)})
+        return jsonify({'success': True, 'job': {'id': job_id, 'location_id': int(location_id), 'name': name}})
     except (ValueError, TypeError):
         connection.rollback()
         return jsonify({'success': False, 'message': 'Ungültiger Standort.'}), 400
@@ -1363,14 +1361,10 @@ def create_function():
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            INSERT INTO functions (name)
-            VALUES (%s)
-            RETURNING id, name
-        ''', (name,))
-        function = cursor.fetchone()
+        cursor.execute('INSERT INTO functions (name) VALUES (%s)', (name,))
+        function = {'id': cursor.lastrowid, 'name': name}
         connection.commit()
-        return jsonify({'success': True, 'function': dict(function)}), 201
+        return jsonify({'success': True, 'function': function}), 201
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1395,19 +1389,13 @@ def update_function(function_id):
             return jsonify({'success': False, 'message': 'Name darf nicht leer sein.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            UPDATE functions
-            SET name = %s
-            WHERE id = %s
-            RETURNING id, name
-        ''', (name, function_id))
-        function = cursor.fetchone()
-        if function is None:
+        cursor.execute('UPDATE functions SET name = %s WHERE id = %s', (name, function_id))
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Funktion nicht gefunden.'}), 404
 
         connection.commit()
-        return jsonify({'success': True, 'function': dict(function)})
+        return jsonify({'success': True, 'function': {'id': function_id, 'name': name}})
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1484,11 +1472,10 @@ def create_location():
         cursor.execute('''
             INSERT INTO locations (name, active)
             VALUES (%s, %s)
-            RETURNING id, name, active
         ''', (name, active))
-        location = cursor.fetchone()
+        location = {'id': cursor.lastrowid, 'name': name, 'active': active}
         connection.commit()
-        return jsonify({'success': True, 'location': dict(location)}), 201
+        return jsonify({'success': True, 'location': location}), 201
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1519,16 +1506,14 @@ def update_location(location_id):
             UPDATE locations
             SET name = %s, active = %s
             WHERE id = %s
-            RETURNING id, name, active
         ''', (name, active, location_id))
-        location = cursor.fetchone()
 
-        if location is None:
+        if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Standort nicht gefunden.'}), 404
 
         connection.commit()
-        return jsonify({'success': True, 'location': dict(location)})
+        return jsonify({'success': True, 'location': {'id': location_id, 'name': name, 'active': active}})
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
@@ -1577,7 +1562,7 @@ def get_employees():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
              SELECT id, first_name, last_name, email_business AS email,
-                 NULLIF(BTRIM(department), '') AS department, username, location_id, job_id,
+                 NULLIF(TRIM(department), '') AS department, username, location_id, job_id,
                  role_id, function_id
             FROM employees ORDER BY last_name asc
         ''')
@@ -1641,9 +1626,6 @@ def create_employee():
             (first_name, last_name, email_business, department, username, password_hash,
              location_id, job_id, role_id, function_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, first_name, last_name, email_business AS email,
-                      department, username, location_id, job_id, role_id,
-                      function_id
         ''', (
             data.get('first_name', ''),
             data.get('last_name', ''),
@@ -1657,10 +1639,21 @@ def create_employee():
             data.get('function_id', 0)
         ))
         
-        employee = cursor.fetchone()
+        employee = {
+            'id': cursor.lastrowid,
+            'first_name': data.get('first_name', ''),
+            'last_name': data.get('last_name', ''),
+            'email': data.get('email', ''),
+            'department': data.get('department', ''),
+            'username': data.get('username', ''),
+            'location_id': data.get('location_id', 0),
+            'job_id': data.get('job_id', 0),
+            'role_id': data.get('role_id', 0),
+            'function_id': data.get('function_id', 0),
+        }
         connection.commit()
         
-        return jsonify({'success': True, 'employee': dict(employee), 'id': employee['id']}), 201
+        return jsonify({'success': True, 'employee': employee, 'id': employee['id']}), 201
     except Error as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
