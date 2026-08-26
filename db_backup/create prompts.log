@@ -76,3 +76,39 @@ Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
 
+**********************************************************
+ //* Login
+*********************************************************
+Anfangs soll der Mitarbeiter auf eine Login-Seite geleitet werden, auf der er seine E-Mail-Adresse und sein Passwort eingibt.
+Die E-Mail-Adresse und das Passwort werden in der Tabelle employees mit den Spalten email und password überprüft.
+Wenn die E-Mail-Adresse und das Passwort korrekt sind, wird der Mitarbeiter auf sein Dashboard weitergeleitet.
+Wenn die E-Mail-Adresse und das Passwort nicht korrekt sind, wird eine Fehlermeldung angezeigt.
+Mitarbeiter, die sich erfolgreich eingeloggt haben, sollen in der Lage sein, sich auszuloggen.
+mitarbeiter, die sich erfolgreich ausgeloggt haben, sollen auf die Login-Seite weitergeleitet werden.
+Mitarbeiter, die sich erfolgreich ausgeloggt haben, sollen nicht in der Lage sein, auf das Dashboard zuzugreifen, ohne sich erneut einzuloggen.
+
+Mitarbeiter mit der Rolle "Admin" sollen in der Lage sein, auf die Stammdaten- und Management-Seite zuzugreifen, auf der sie alle Mitarbeiter, Vorlagen und Aufgaben verwalten können.
+Mitarbeiter mit der Rolle "Manager" sollen in der Lage sein, auf die Management-Seiten zuzugreifen, auf der sie alle Mitarbeiter, Vorlagen und Aufgaben verwalten können.
+
+
+**********************************************************
+ //* CRUD for tasks
+*********************************************************
+Ein neuer Mitarbeiter ist mit seinem Eintrittsdatum bekannt und es soll nun für diesen Mitarbeiter die Aufgaben aus der Vorlage zugewiesen bekommen.
+Die Eingabemaske für die Erstellung von Aufgaben (tasks) für einen neuen Mitarbeiter könnte wie folgt aussehen: 
+Mitarbeiter auswählen (Combobox mit allen Mitarbeitern), Eintrittsdatum (Datumsauswahl), Vorlage auswählen (Combobox mit allen Vorlagen). 
+Nach der Auswahl und Bestätigung werden die Aufgaben aus der gewählten Vorlage für den ausgewählten Mitarbeiter erstellt, 
+wobei das Fälligkeitsdatum jeder Aufgabe basierend auf dem Eintrittsdatum und dem jeweiligen due_offset_days berechnet wird.
+
+Jede Aufgabe soll in der Tabelle tasks die Spalten id->ID, employee_id->MITARBEITER, template_task_id->VORLAGE, title->TITEL, description->BESCHREIBUNG, due_date->FÄLLIG, status->STATUS und created_at->ERSTELLT AM enthalten.
+Die Datenfelder von employee_id->employees.name und template_task_id->template_tasks.title werden jeweils aufgelöst dargestellt.
+Die Aufgaben sollen editiert werden können, wobei der Titel und die Beschreibung der Aufgabe bearbeitet werden können. 
+Das Fälligkeitsdatum kann ebenfalls angepasst werden, jedoch nicht auf ein Datum in der Vergangenheit gesetzt werden. 
+Der Status der Aufgabe kann auf "Offen", "in Bearbeitung" oder "erledigt" gesetzt werden.
+
+Täglich soll ein Cronjob laufen, der überprüft, ob Aufgaben fällig sind. 
+Wenn eine Aufgabe fällig ist, wird eine E-Mail an den Mitarbeiter gesendet, die den Titel und die Beschreibung der Aufgabe enthält.
+Der Titel und die Beschreibung der Aufgabe werden aus den Feldern subject und body_html bzw. body_text der Tabelle email_template mit der id template_tasks.email_template_id übernommen.
+
+Jeder Mitarbeiter soll in seinem Dashboard eine Übersicht über seine Aufgaben sehen, die nach Fälligkeitsdatum sortiert ist.
+Jeder Mitarbeiter kann den Status seiner Aufgaben auf "Offen" oder "in Bearbeitung" oder "erledigt" setzen.

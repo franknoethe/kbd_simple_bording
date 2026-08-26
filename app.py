@@ -1,15 +1,64 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, session, url_for
 from pathlib import Path
 from io import BytesIO
 from base64 import b64encode
 import re
+import hmac
+import os
 import pymysql
 from pymysql import Error
 from pymysql.cursors import DictCursor as RealDictCursor
 from pymysql.constants import CLIENT
 import olefile
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('KBD_SECRET_KEY', 'kbd-simple-boarding-development-key')
+
+MANAGEMENT_PATHS = {
+    '/employees', '/templates', '/template-tasks',
+    '/api/employees', '/api/employee-options', '/api/templates',
+    '/api/template-tasks', '/api/template-tasks/options',
+}
+MASTER_DATA_PATHS = {
+    '/locations', '/functions', '/jobs', '/roles', '/email-templates',
+    '/process-types', '/api/locations', '/api/functions', '/api/jobs',
+    '/api/roles', '/api/email-templates', '/api/process-types',
+    '/api/job-options', '/api/templates/options',
+}
+
+
+def is_api_request():
+    return request.path.startswith('/api/')
+
+
+def current_user_role():
+    return session.get('user', {}).get('role', '')
+
+
+@app.before_request
+def protect_application():
+    if request.endpoint in {'login', 'logout', 'static'}:
+        return None
+
+    if 'user' not in session:
+        if is_api_request():
+            return jsonify({'success': False, 'message': 'Anmeldung erforderlich.'}), 401
+        return redirect(url_for('login', next=request.full_path if request.query_string else request.path))
+
+    is_management_path = request.path in MANAGEMENT_PATHS or any(
+        request.path.startswith(path + '/') for path in MANAGEMENT_PATHS
+    )
+    is_master_data_path = request.path in MASTER_DATA_PATHS or any(
+        request.path.startswith(path + '/') for path in MASTER_DATA_PATHS
+    )
+    role = current_user_role().casefold()
+    if (is_management_path and role not in {'admin', 'manager'}) or (is_master_data_path and role != 'admin'):
+        if is_api_request():
+            return jsonify({'success': False, 'message': 'Keine Berechtigung.'}), 403
+        return render_template('403.html'), 403
+
+    return None
 
 # MariaDB Database Configuration
 DB_CONFIG = {
@@ -100,6 +149,82 @@ def compute_stats():
         "pending": pending,
         "avg_progress": avg_progress,
     }
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user' in session:
+        return redirect(url_for('index'))
+
+    error = None
+    email = request.form.get('email', '').strip()
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        connection = get_db_connection()
+        cursor = None
+        if not connection:
+            error = 'Die Datenbank ist momentan nicht erreichbar.'
+        else:
+            try:
+                cursor = connection.cursor(cursor_factory=RealDictCursor)
+                try:
+                    cursor.execute('''
+                        SELECT e.id, e.first_name, e.last_name, e.email, e.password,
+                               COALESCE(r.name, '') AS role
+                        FROM employees e
+                        LEFT JOIN roles r ON r.id = e.role_id
+                        WHERE LOWER(e.email) = LOWER(%s)
+                    ''', (email,))
+                except Error:
+                    connection.rollback()
+                    cursor.execute('''
+                        SELECT e.id, e.first_name, e.last_name,
+                               e.email_business AS email, e.password_hash AS password,
+                               COALESCE(r.name, '') AS role
+                        FROM employees e
+                        LEFT JOIN roles r ON r.id = e.role_id
+                        WHERE LOWER(e.email_business) = LOWER(%s)
+                    ''', (email,))
+                employee = cursor.fetchone()
+                stored_password = employee.get('password') if employee else None
+                password_matches = False
+                if stored_password:
+                    stored_password = str(stored_password)
+                    if '$' in stored_password:
+                        try:
+                            password_matches = check_password_hash(stored_password, password)
+                        except ValueError:
+                            password_matches = False
+                    else:
+                        password_matches = hmac.compare_digest(stored_password, password)
+
+                if employee and password_matches:
+                    session.clear()
+                    session['user'] = {
+                        'id': employee['id'],
+                        'name': f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip(),
+                        'email': employee['email'],
+                        'role': employee.get('role', ''),
+                    }
+                    next_url = request.args.get('next', '')
+                    if not next_url.startswith('/') or next_url.startswith('//'):
+                        next_url = url_for('index')
+                    return redirect(next_url)
+                error = 'E-Mail-Adresse oder Passwort ist nicht korrekt.'
+            except Error:
+                error = 'Die Anmeldung konnte nicht geprüft werden.'
+            finally:
+                if cursor:
+                    cursor.close()
+                connection.close()
+
+    return render_template('login.html', error=error, email=email)
+
+
+@app.route('/logout', methods=['POST', 'GET'])
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 
 @app.route("/")

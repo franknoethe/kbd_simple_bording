@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,17 +22,24 @@
           <a class="{% if request.path == '/employees' %}active{% endif %}" href="/employees">Mitarbeiter</a>
           <a class="{% if request.path == '/locations' %}active{% endif %}" href="/locations">Standorte</a>
           <a class="{% if request.path == '/functions' %}active{% endif %}" href="/functions">Funktionen</a>
+            {% if session.user.role|lower == 'admin' %}
           <a class="{% if request.path == '/jobs' %}active{% endif %}" href="/jobs">Jobs</a>
           <a class="{% if request.path == '/roles' %}active{% endif %}" href="/roles">Rollen</a>
           <a class="{% if request.path == '/email-templates' %}active{% endif %}" href="/email-templates">E-Mail-Vorlagen</a>
           <a class="{% if request.path == '/process-types' %}active{% endif %}" href="/process-types">Prozesse</a>
+            {% endif %}
           <a class="{% if request.path == '/templates' %}active{% endif %}" href="/templates">Prozessvorlagen</a>
           <a class="{% if request.path == '/template-tasks' %}active{% endif %}" href="/template-tasks">Prozessaufgaben</a>
-          <a class="{% if request.path == '/api/employees' %}active{% endif %}" href="/api/employees">API</a>
         </nav>
       </aside>
 
       <main class="main-content">
+        <div class="account-bar">
+          <span>{{ session.user.name }} · {{ session.user.role }}</span>
+          <form method="post" action="{{ url_for('logout') }}">
+            <button class="logout-btn" type="submit">Abmelden</button>
+          </form>
+        </div>
         {% block content %}{% endblock %}
       </main>
     </div>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anmelden | KBD Simple Boarding</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="auth-page">
+    <main class="login-panel">
+      <div class="brand auth-brand">
+        <div class="brand-mark"></div>
+        <div><strong>KBD</strong><small>Simple Boarding</small></div>
+      </div>
+      <p class="eyebrow">Mitarbeiterportal</p>
+      <h1>Anmelden</h1>
+      <p class="login-intro">Melden Sie sich an, um Ihr Boarding-Dashboard zu öffnen.</p>
+      {% if error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
+      <form method="post" class="login-form">
+          <input type="hidden" name="next" value="{{ request.args.get('next', '') }}" />
+        <label for="email">E-Mail-Adresse</label>
+        <input id="email" name="email" type="email" value="{{ email or '' }}" autocomplete="username" required autofocus />
+        <label for="password">Passwort</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <button class="primary-btn login-btn" type="submit">Anmelden</button>
+      </form>
+    </main>
+  </body>
+</html>

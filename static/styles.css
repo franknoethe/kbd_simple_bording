@@ -696,7 +696,80 @@ th.th-action {
 
 /* .delete-btn {
   background: var(--red);
-} */  
+} */
+
+.account-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.account-bar form { margin: 0; }
+
+.logout-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.auth-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  /*background: linear-gradient(135deg, #eef4ff 0%, #f7f7f5 55%, #fff1dc 100%);*/
+  background: url(bg_login.png);
+}
+
+.login-panel {
+  width: min(100%, 430px);
+  padding: 38px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+}
+
+.auth-brand { margin-bottom: 36px; }
+.login-panel h1 { margin-top: 8px; }
+.login-intro { color: var(--muted); line-height: 1.55; }
+.login-form { display: grid; gap: 8px; margin-top: 26px; }
+.login-form label { margin-top: 9px; font-size: 13px; font-weight: 700; }
+.login-form input:not([type="hidden"]) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+.login-form input:focus { outline: 3px solid var(--primary-soft); border-color: var(--primary); }
+.login-btn { min-height: 44px; margin-top: 18px; border-radius: 9px; }
+.form-error { margin-top: 18px; padding: 11px 12px; border-radius: 9px; background: var(--red-soft); color: var(--red); font-size: 13px; }
+.access-denied { max-width: 620px; }
+
+@media (max-width: 700px) {
+  .page-shell { display: block; }
+  .sidebar { padding: 18px; }
+  .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .main-content { padding: 18px; }
+  .account-bar { justify-content: space-between; }
+  .login-panel { padding: 28px 22px; }
+}
 
 /*.preview-btn,
 .import-btn {
