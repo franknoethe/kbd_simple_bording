@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Aufgaben{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><p class="eyebrow">Management</p><h1>Aufgaben</h1></div>
+  <button class="primary-btn" id="assign-task-btn" type="button">Aufgaben zuweisen</button>
+</header>
+<section class="panel">
+  <div class="panel-header"><h2>Aufgabenliste</h2><span id="task-count">0 Aufgaben</span></div>
+  <div id="task-message" class="form-message"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Mitarbeiter</th><th>Vorlage</th><th>Titel</th><th>Beschreibung</th><th>Fällig</th><th>Status</th><th>Erstellt am</th><th>Aktionen</th></tr></thead>
+      <tbody id="tasks-tbody"><tr><td colspan="9" class="table-message">Lädt...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<div id="task-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+  <div class="modal">
+    <div class="modal-header"><h2 id="task-modal-title">Aufgaben zuweisen</h2><button class="close-btn" id="task-modal-close" type="button" aria-label="Dialog schließen">&times;</button></div>
+    <form id="task-form">
+      <div class="form-group"><label for="task-employee">Mitarbeiter</label><select id="task-employee" required></select></div>
+      <div class="form-group"><label for="task-entry-date">Eintrittsdatum</label><input id="task-entry-date" type="date" required></div>
+      <div class="form-group"><label for="task-template">Vorlage</label><select id="task-template" required></select></div>
+      <p id="task-form-message" class="form-message"></p>
+      <div class="modal-actions"><button class="primary-btn" type="submit">Zuweisen</button><button class="secondary-btn" id="task-form-cancel" type="button">Abbrechen</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const canManageTasks = {{ 'true' if session.user.role|lower in ['admin', 'manager'] else 'false' }};
+  const statuses = { open: 'Offen', in_progress: 'In Bearbeitung', completed: 'Erledigt' };
+  const today = new Date().toISOString().slice(0, 10);
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const taskModal = document.getElementById('task-modal');
+  const taskMessage = document.getElementById('task-message');
+  function showTaskMessage(message, target = taskMessage) { target.textContent = message || ''; target.classList.toggle('is-visible', Boolean(message)); }
+  async function loadOptions() {
+    const response = await fetch('/api/task-options'); const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    document.getElementById('task-employee').innerHTML = data.employees.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+    document.getElementById('task-template').innerHTML = data.templates.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+  }
+  function renderTasks(tasks) {
+    document.getElementById('task-count').textContent = `${tasks.length} Aufgaben`;
+    document.getElementById('tasks-tbody').innerHTML = tasks.length ? tasks.map(task => `<tr>
+      <td>${task.id}</td><td>${escapeHtml(task.employee_name)}</td><td>${escapeHtml(task.template_task_title)}</td>
+      <td><input class="task-title" data-id="${task.id}" value="${escapeHtml(task.title)}"></td>
+      <td><textarea class="task-description" data-id="${task.id}">${escapeHtml(task.description)}</textarea></td>
+      <td><input class="task-due-date" data-id="${task.id}" type="date" min="${today}" value="${task.due_date || ''}"></td>
+      <td><select class="task-status" data-id="${task.id}">${Object.entries(statuses).map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td>
+      <td>${escapeHtml(task.created_at || '')}</td><td><button class="secondary-btn task-save" data-id="${task.id}" type="button">Speichern</button></td>
+    </tr>`).join('') : '<tr><td colspan="9" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+    document.querySelectorAll('.task-save').forEach(button => button.addEventListener('click', () => saveTask(button.dataset.id)));
+  }
+  async function loadTasks() { const response = await fetch('/api/tasks'); const data = await response.json(); if (!data.success) throw new Error(data.message); renderTasks(data.tasks); }
+  async function saveTask(id) {
+    const field = selector => document.querySelector(`${selector}[data-id="${id}"]`).value;
+    const response = await fetch(`/api/tasks/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: field('.task-title'), description: field('.task-description'), due_date: field('.task-due-date'), status: field('.task-status')}) });
+    const data = await response.json(); showTaskMessage(data.success ? 'Aufgabe gespeichert.' : data.message); if (data.success) loadTasks();
+  }
+  document.getElementById('assign-task-btn').addEventListener('click', () => { taskModal.classList.remove('is-hidden'); });
+  document.getElementById('task-modal-close').addEventListener('click', () => taskModal.classList.add('is-hidden'));
+  document.getElementById('task-form-cancel').addEventListener('click', () => taskModal.classList.add('is-hidden'));
+  document.getElementById('task-form').addEventListener('submit', async event => {
+    event.preventDefault(); const formMessage = document.getElementById('task-form-message');
+    const response = await fetch('/api/tasks', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({employee_id: document.getElementById('task-employee').value, entry_date: document.getElementById('task-entry-date').value, template_id: document.getElementById('task-template').value}) });
+    const data = await response.json(); showTaskMessage(data.success ? `${data.created} Aufgaben zugewiesen.` : data.message, formMessage); if (data.success) { taskModal.classList.add('is-hidden'); loadTasks(); }
+  });
+  document.getElementById('task-entry-date').value = today;
+  Promise.all([loadOptions(), loadTasks()]).catch(error => showTaskMessage(error.message));
+</script>
+{% endblock %}

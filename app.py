@@ -5,6 +5,7 @@ from base64 import b64encode
 import re
 import hmac
 import os
+from datetime import date, datetime, timedelta
 import pymysql
 from pymysql import Error
 from pymysql.cursors import DictCursor as RealDictCursor
@@ -16,9 +17,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('KBD_SECRET_KEY', 'kbd-simple-boarding-development-key')
 
 MANAGEMENT_PATHS = {
-    '/employees', '/templates', '/template-tasks',
+    '/employees', '/templates', '/template-tasks', '/tasks',
     '/api/employees', '/api/employee-options', '/api/templates',
     '/api/template-tasks', '/api/template-tasks/options',
+    '/api/task-options',
 }
 MASTER_DATA_PATHS = {
     '/locations', '/functions', '/jobs', '/roles', '/email-templates',
@@ -149,6 +151,186 @@ def compute_stats():
         "pending": pending,
         "avg_progress": avg_progress,
     }
+
+
+TASK_STATUSES = {
+    'open': 'Offen',
+    'in_progress': 'In Bearbeitung',
+    'completed': 'Erledigt',
+}
+
+
+def task_connection_error():
+    return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+
+def task_payload(row):
+    item = dict(row)
+    if isinstance(item.get('due_date'), (date, datetime)):
+        item['due_date'] = item['due_date'].isoformat()
+    if isinstance(item.get('created_at'), datetime):
+        item['created_at'] = item['created_at'].isoformat(sep=' ', timespec='seconds')
+    item['status_label'] = TASK_STATUSES.get(item.get('status'), item.get('status', ''))
+    return item
+
+
+@app.route('/tasks')
+def tasks_page():
+    return render_template('tasks.html')
+
+
+@app.route('/api/task-options')
+def task_options():
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            FROM employees ORDER BY last_name, first_name
+        """)
+        employees = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM templates WHERE active = TRUE ORDER BY name')
+        templates = cursor.fetchall()
+        return jsonify({'success': True, 'employees': [dict(row) for row in employees],
+                        'templates': [dict(row) for row in templates],
+                        'statuses': TASK_STATUSES})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks')
+def get_tasks():
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        is_manager = current_user_role().casefold() in {'admin', 'manager'}
+        employee_id = request.args.get('employee_id', type=int)
+        if not is_manager:
+            employee_id = session['user']['id']
+        where = 'WHERE t.employee_id = %s' if employee_id else ''
+        values = (employee_id,) if employee_id else ()
+        cursor.execute(f"""
+            SELECT t.id, t.employee_id, t.template_task_id, t.title, t.description,
+                   t.due_date, t.status, t.created_at,
+                   CONCAT_WS(' ', e.first_name, e.last_name) AS employee_name,
+                   tt.title AS template_task_title
+            FROM tasks t
+            JOIN employees e ON e.id = t.employee_id
+            JOIN template_tasks tt ON tt.id = t.template_task_id
+            {where}
+            ORDER BY t.due_date ASC, t.id ASC
+        """, values)
+        return jsonify({'success': True, 'tasks': [task_payload(row) for row in cursor.fetchall()]})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks', methods=['POST'])
+def assign_tasks():
+    if current_user_role().casefold() not in {'admin', 'manager'}:
+        return jsonify({'success': False, 'message': 'Keine Berechtigung.'}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        employee_id = int(data['employee_id'])
+        template_id = int(data['template_id'])
+        entry_date = date.fromisoformat(data['entry_date'])
+    except (KeyError, TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Mitarbeiter, Eintrittsdatum und Vorlage sind erforderlich.'}), 400
+
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id FROM employees WHERE id = %s', (employee_id,))
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Mitarbeiter nicht gefunden.'}), 404
+        cursor.execute('''
+            SELECT id, title, description, due_offset_days
+            FROM template_tasks WHERE template_id = %s ORDER BY step, id
+        ''', (template_id,))
+        template_tasks = cursor.fetchall()
+        if not template_tasks:
+            return jsonify({'success': False, 'message': 'Die Vorlage enthält keine Aufgaben.'}), 400
+        for template_task in template_tasks:
+            due_date = entry_date + timedelta(days=int(template_task['due_offset_days'] or 0))
+            cursor.execute('''
+                INSERT INTO tasks (employee_id, template_task_id, title, description, due_date, status)
+                VALUES (%s, %s, %s, %s, %s, 'open')
+            ''', (employee_id, template_task['id'], template_task['title'],
+                  template_task['description'], due_date))
+        connection.commit()
+        return jsonify({'success': True, 'created': len(template_tasks)}), 201
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    data = request.get_json(silent=True) or {}
+    status = data.get('status')
+    if status not in TASK_STATUSES:
+        return jsonify({'success': False, 'message': 'Ungültiger Status.'}), 400
+    try:
+        due_date = date.fromisoformat(data.get('due_date', ''))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Ein gültiges Fälligkeitsdatum ist erforderlich.'}), 400
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        allowed = '' if current_user_role().casefold() in {'admin', 'manager'} else ' AND employee_id = %s'
+        lookup_values = [task_id]
+        if allowed:
+            lookup_values.append(session['user']['id'])
+        cursor.execute(f'SELECT due_date FROM tasks WHERE id = %s{allowed}', lookup_values)
+        current_task = cursor.fetchone()
+        if not current_task:
+            return jsonify({'success': False, 'message': 'Aufgabe nicht gefunden oder nicht erlaubt.'}), 404
+        current_due_date = current_task['due_date']
+        if due_date < date.today() and due_date != current_due_date:
+            return jsonify({'success': False, 'message': 'Das Fälligkeitsdatum darf nicht in der Vergangenheit liegen.'}), 400
+        values = [data.get('title', '').strip(), data.get('description', '').strip(), due_date, status, task_id]
+        if allowed:
+            values.append(session['user']['id'])
+        cursor.execute(f'''
+            UPDATE tasks SET title = %s, description = %s, due_date = %s, status = %s
+            WHERE id = %s{allowed}
+        ''', values)
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Aufgabe nicht gefunden oder nicht erlaubt.'}), 404
+        connection.commit()
+        return jsonify({'success': True, 'id': task_id})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
 
 
 @app.route('/login', methods=['GET', 'POST'])

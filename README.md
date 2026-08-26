@@ -68,3 +68,19 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Aufgaben
+
+Vor der ersten Nutzung die Migration `db_backup/tasks_migration.sql` in der Datenbank `kbd_hr_boarding` ausführen. Danach können Admins und Manager unter `/tasks` Aufgaben aus einer Vorlage einem Mitarbeiter zuweisen. Mitarbeiter sehen ihre eigenen Aufgaben auf dem Dashboard und können deren Status ändern.
+
+Der tägliche Mailversand läuft über `send_task_reminders.py`. Dafür müssen `KBD_SMTP_HOST`, optional `KBD_SMTP_PORT`, `KBD_SMTP_FROM`, `KBD_SMTP_USER`, `KBD_SMTP_PASSWORD` und `KBD_SMTP_TLS` gesetzt werden. Unter Windows kann die Datei im Aufgabenplaner einmal täglich mit diesem Programm gestartet werden:
+
+```text
+C:\xampp\htdocs\nodejs_projects\kbd_simple_boarding\.venv\Scripts\python.exe
+```
+
+Argument:
+
+```text
+C:\xampp\htdocs\nodejs_projects\kbd_simple_boarding\send_task_reminders.py
+```

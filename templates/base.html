@@ -30,6 +30,9 @@
             {% endif %}
           <a class="{% if request.path == '/templates' %}active{% endif %}" href="/templates">Prozessvorlagen</a>
           <a class="{% if request.path == '/template-tasks' %}active{% endif %}" href="/template-tasks">Prozessaufgaben</a>
+          {% if session.user.role|lower in ['admin', 'manager'] %}
+          <a class="{% if request.path == '/tasks' %}active{% endif %}" href="/tasks">Aufgaben</a>
+          {% endif %}
         </nav>
       </aside>
 
