@@ -16,6 +16,7 @@
       <h2>Mitarbeiterliste</h2>
       <span id="employee-count">0 Mitarbeiter</span>
     </div>
+    <p id="employee-page-message" class="form-message" role="status"></p>
 
     <div class="table-wrap">
       <table>
@@ -55,14 +56,14 @@
                 <input id="employee-filter-role" type="search" placeholder="Rolle filtern" autocomplete="off" aria-label="Rolle filtern" data-filter-field="role_id">
                 <div id="employee-suggestions-role" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>
-              <span class="sortable-heading">Rolle</span>
+              <span class="sortable-heading">System-Rolle</span>
             </th>
             <th>
               <div class="employee-filter">
                 <input id="employee-filter-function" type="search" placeholder="Funktion filtern" autocomplete="off" aria-label="Funktion filtern" data-filter-field="function_id">
                 <div id="employee-suggestions-function" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>
-              <span class="sortable-heading">Funktion</span>
+              <span class="sortable-heading">Prozess-Funktion</span>
             </th>
             <th>Aktionen</th>
           </tr>
@@ -489,11 +490,11 @@
           });
           const data = await response.json();
           if (data.success) {
-            alert('Mitarbeiter aktualisiert');
             closeModal();
-            loadEmployees();
+            setEmployeePageMessage('Mitarbeiter erfolgreich aktualisiert.');
+            await loadEmployees();
           } else {
-            alert('Fehler: ' + data.message);
+            setEmployeePageMessage(data.message || 'Fehler beim Aktualisieren.', true);
           }
         } else {
           // Create
@@ -504,16 +505,16 @@
           });
           const data = await response.json();
           if (data.success) {
-            alert('Mitarbeiter erstellt');
             closeModal();
-            loadEmployees();
+            setEmployeePageMessage('Mitarbeiter erfolgreich erstellt.');
+            await loadEmployees();
           } else {
-            alert('Fehler: ' + data.message);
+            setEmployeePageMessage(data.message || 'Fehler beim Erstellen.', true);
           }
         }
       } catch (error) {
         console.error('Error saving employee:', error);
-        alert('Fehler beim Speichern');
+        setEmployeePageMessage('Fehler beim Speichern.', true);
       }
     }
 
@@ -526,15 +527,23 @@
         });
         const data = await response.json();
         if (data.success) {
-          alert('Mitarbeiter gelöscht');
-          loadEmployees();
+          setEmployeePageMessage('Mitarbeiter erfolgreich gelöscht.');
+          await loadEmployees();
         } else {
-          alert('Fehler: ' + data.message);
+          setEmployeePageMessage(data.message || 'Fehler beim Löschen.', true);
         }
       } catch (error) {
         console.error('Error deleting employee:', error);
-        alert('Fehler beim Löschen');
+        setEmployeePageMessage('Fehler beim Löschen.', true);
       }
+    }
+
+    function setEmployeePageMessage(message, isError = false) {
+      const element = document.getElementById('employee-page-message');
+      element.textContent = message;
+      element.classList.toggle('is-visible', Boolean(message));
+      element.classList.toggle('table-message-error', isError);
+      element.classList.toggle('operation-success', Boolean(message) && !isError);
     }
 
     function closeModal() {

@@ -362,6 +362,63 @@ th.th-action {
   color: var(--muted);
 }
 
+.template-task-filter {
+  position: relative;
+  min-width: 150px;
+  margin-bottom: 8px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.template-task-filter input {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.template-task-filter input:focus {
+  outline: 3px solid var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.template-task-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.template-task-suggestion,
+.template-task-suggestion-empty {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.template-task-suggestion { cursor: pointer; }
+.template-task-suggestion:hover { background: var(--primary-soft); color: var(--primary); }
+.template-task-suggestion-empty { color: var(--muted); }
+
 .employee-filter {
   position: relative;
   min-width: 150px;
@@ -626,6 +683,8 @@ th.th-action {
   color: var(--red);
   font-size: 13px;
 }
+
+.operation-success { color: var(--green); }
 
 .form-message:not(.is-visible) {
   visibility: hidden;

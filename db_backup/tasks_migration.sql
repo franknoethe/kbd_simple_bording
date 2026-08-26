@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS tasks (
     reminder_sent_at TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_tasks_employee FOREIGN KEY (employee_id) REFERENCES employees (id),
-    CONSTRAINT fk_tasks_template_task FOREIGN KEY (template_task_id) REFERENCES template_tasks (id),
+    CONSTRAINT fk_tasks_template_task FOREIGN KEY (template_task_id) REFERENCES template_tasks (id) ON DELETE CASCADE,
     INDEX idx_tasks_due_date (due_date, status, reminder_sent_at)
 );

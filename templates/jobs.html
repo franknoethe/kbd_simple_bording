@@ -16,6 +16,7 @@
       <h2>Jobliste</h2>
       <span id="job-count">0 Jobs</span>
     </div>
+    <p id="job-page-message" class="form-message" role="status"></p>
 
     <div class="table-wrap">
       <table>
@@ -309,6 +310,7 @@
           throw new Error(data.message || 'Speichern fehlgeschlagen.');
         }
         closeJobModal();
+        setJobPageMessage(`${data.created || 1} Job${(data.created || 1) === 1 ? '' : 's'} erfolgreich gespeichert.`);
         await loadJobs();
       } catch (error) {
         setJobFormMessage(error.message);
@@ -326,7 +328,7 @@
         }
         await loadJobs();
       } catch (error) {
-        window.alert(error.message);
+        setJobPageMessage(error.message, true);
       }
     }
 
@@ -344,6 +346,14 @@
       const element = document.getElementById('job-form-message');
       element.textContent = message;
       element.classList.toggle('is-visible', Boolean(message));
+    }
+
+    function setJobPageMessage(message, isError = false) {
+      const element = document.getElementById('job-page-message');
+      element.textContent = message;
+      element.classList.toggle('is-visible', Boolean(message));
+      element.classList.toggle('table-message-error', isError);
+      element.classList.toggle('operation-success', Boolean(message) && !isError);
     }
 
     function escapeHtml(value) {

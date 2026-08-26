@@ -339,7 +339,7 @@ def login():
         return redirect(url_for('index'))
 
     error = None
-    email = request.form.get('email', '').strip()
+    username = request.form.get('username', '').strip()
     if request.method == 'POST':
         password = request.form.get('password', '')
         connection = get_db_connection()
@@ -349,26 +349,15 @@ def login():
         else:
             try:
                 cursor = connection.cursor(cursor_factory=RealDictCursor)
-                try:
-                    cursor.execute('''
-                        SELECT e.id, e.first_name, e.last_name, e.email, e.password,
-                               COALESCE(r.name, '') AS role
-                        FROM employees e
-                        LEFT JOIN roles r ON r.id = e.role_id
-                        WHERE LOWER(e.email) = LOWER(%s)
-                    ''', (email,))
-                except Error:
-                    connection.rollback()
-                    cursor.execute('''
-                        SELECT e.id, e.first_name, e.last_name,
-                               e.email_business AS email, e.password_hash AS password,
-                               COALESCE(r.name, '') AS role
-                        FROM employees e
-                        LEFT JOIN roles r ON r.id = e.role_id
-                        WHERE LOWER(e.email_business) = LOWER(%s)
-                    ''', (email,))
+                cursor.execute('''
+                    SELECT e.id, e.first_name, e.last_name, e.username,
+                           e.password_hash, COALESCE(r.name, '') AS role
+                    FROM employees e
+                    LEFT JOIN roles r ON r.id = e.role_id
+                    WHERE LOWER(e.username) = LOWER(%s)
+                ''', (username,))
                 employee = cursor.fetchone()
-                stored_password = employee.get('password') if employee else None
+                stored_password = employee.get('password_hash') if employee else None
                 password_matches = False
                 if stored_password:
                     stored_password = str(stored_password)
@@ -385,14 +374,14 @@ def login():
                     session['user'] = {
                         'id': employee['id'],
                         'name': f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip(),
-                        'email': employee['email'],
+                        'username': employee['username'],
                         'role': employee.get('role', ''),
                     }
                     next_url = request.args.get('next', '')
                     if not next_url.startswith('/') or next_url.startswith('//'):
                         next_url = url_for('index')
                     return redirect(next_url)
-                error = 'E-Mail-Adresse oder Passwort ist nicht korrekt.'
+                error = 'Benutzername oder Passwort ist nicht korrekt.'
             except Error:
                 error = 'Die Anmeldung konnte nicht geprüft werden.'
             finally:
@@ -400,7 +389,7 @@ def login():
                     cursor.close()
                 connection.close()
 
-    return render_template('login.html', error=error, email=email)
+    return render_template('login.html', error=error, username=username)
 
 
 @app.route('/logout', methods=['POST', 'GET'])
@@ -554,7 +543,10 @@ def get_template_tasks():
             LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
             LEFT JOIN email_templates ON email_templates.id = template_tasks.email_template_id
         '''
-        cursor.execute(f'SELECT COUNT(*) AS total {joins}')
+        template_id = request.args.get('template_id', type=int)
+        filter_sql = ' WHERE template_tasks.template_id = %s' if template_id else ''
+        filter_values = (template_id,) if template_id else ()
+        cursor.execute(f'SELECT COUNT(*) AS total {joins}{filter_sql}', filter_values)
         total = cursor.fetchone()['total']
         total_pages = max(1, (total + page_size - 1) // page_size)
         page = min(page, total_pages)
@@ -568,9 +560,10 @@ def get_template_tasks():
                    email_templates.name AS email_template_name,
                    template_tasks.mandatory
             {joins}
+            {filter_sql}
             ORDER BY {sort_column} {direction}, template_tasks.id ASC
             LIMIT %s OFFSET %s
-        ''', (page_size, (page - 1) * page_size))
+        ''', filter_values + (page_size, (page - 1) * page_size))
         tasks = [dict(item) for item in cursor.fetchall()]
         return jsonify({'success': True, 'template_tasks': tasks, 'total': total,
                         'page': page, 'total_pages': total_pages})
@@ -673,19 +666,21 @@ def update_template_task(task_id):
 
 @app.route("/api/template-tasks/<int:task_id>", methods=['DELETE'])
 def delete_template_task(task_id):
-    """Delete a process task."""
+    """Delete a process task and its generated employee tasks."""
     connection = get_db_connection()
     cursor = None
     if not connection:
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
     try:
         cursor = connection.cursor()
+        cursor.execute('DELETE FROM tasks WHERE template_task_id = %s', (task_id,))
+        deleted_tasks = cursor.rowcount
         cursor.execute('DELETE FROM template_tasks WHERE id = %s', (task_id,))
         if cursor.rowcount == 0:
             connection.rollback()
             return jsonify({'success': False, 'message': 'Prozessaufgabe nicht gefunden.'}), 404
         connection.commit()
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'deleted_tasks': deleted_tasks})
     except Error as error:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
@@ -1534,7 +1529,7 @@ def get_job_options():
 
 @app.route("/api/jobs", methods=['POST'])
 def create_job():
-    """Create a job."""
+    """Create one job for each comma-separated name."""
     connection = get_db_connection()
     cursor = None
     if not connection:
@@ -1542,19 +1537,22 @@ def create_job():
 
     try:
         data = request.get_json(silent=True) or {}
-        name = str(data.get('name', '')).strip()
+        names = [name.strip() for name in str(data.get('name', '')).split(',') if name.strip()]
         location_id = data.get('location_id')
-        if not name or location_id in (None, ''):
+        if not names or location_id in (None, ''):
             return jsonify({'success': False, 'message': 'Name und Standort sind erforderlich.'}), 400
 
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
-            INSERT INTO jobs (location_id, name)
-            VALUES (%s, %s)
-        ''', (int(location_id), name))
-        job = {'id': cursor.lastrowid, 'location_id': int(location_id), 'name': name}
+        location_id = int(location_id)
+        jobs = []
+        for name in names:
+            cursor.execute('''
+                INSERT INTO jobs (location_id, name)
+                VALUES (%s, %s)
+            ''', (location_id, name))
+            jobs.append({'id': cursor.lastrowid, 'location_id': location_id, 'name': name})
         connection.commit()
-        return jsonify({'success': True, 'job': job}), 201
+        return jsonify({'success': True, 'jobs': jobs, 'created': len(jobs)}), 201
     except (ValueError, TypeError):
         connection.rollback()
         return jsonify({'success': False, 'message': 'Ungültiger Standort.'}), 400

@@ -16,6 +16,10 @@ Erstelle für die Tabelle functions eine CRUD-Seite mit Navigationseintrag, Post
 Erstelle für die Tabelle jobs eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, location_id und name. Im Formular wird der Wert der location_id durch den Wert aus locations -> name ersetzt. gleichbedeutend wird im create  und update das Datenfeld location_id durch eine combobox mit dem Werten aus locations -> name gefüllt. Ich möchte die Tabelle in den Spalten id, standort und job nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 Schreibe mir einen Datensatz-Filter für die jobliste. Es erscheint in der Spalte standort unter der Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze von jobs aus dem der Benutzer einen wählt. Nach einem klick wird die Jobliste ausschließlich mit den Datensatzen des gewählten Standortes gefüllt.
 
+********************************************************
+Bei der Anlage "Neuer Job" werden im Textfeld "Name" Begriffe aufgelistet die durch Komma getrennt sind werden beim speichern für jeden Begriff unter Standort ein Job angelegt.
+Nach dem erfolgreichen speichern möchte ich kein java-meldefenster
+
 
 **********************************************************
  //* Changes for employees
@@ -26,6 +30,9 @@ Erweitere mir die Tabelle mitarbeiterliste mit den Spalten Standort -> location_
 Schreibe mir einen Datensatz-Filter für die Mtarbeiterliste. Es erscheint in den Spalten Nachname, Standort, Job, Rolle und Funktion unter der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Mitarbeiterliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 
 Im Fall von create und update werden in den Modals Neuer Mitarbeiter und Mitarbeiter bearbeiten nach der Wahl in der Combobox Standort die Daten der Combobox Job auf die der standort_id angezeigt.  
+
+**********************************************************
+Nach dem erfolgreichen speichern oder löschen in der Mitarbeiterliste möchte ich kein java-meldefenster
 
 
 **********************************************************
@@ -65,6 +72,9 @@ Im Fall von create und update werden in den Modals Template bearbeiten nach der 
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 Im Fall von create und update werden in den Modals die Daten von process_type_id, location_id und job_id jewils in einer Combobox PROZESS, LOCATION und JOB angezeigt und zu auswahl gestellt.  
 
+**********************************************************
+
+
 
 **********************************************************
  //* CRUD for template_tasks
@@ -74,6 +84,14 @@ Verwende die Spalten id->ID, step->STEP, template_id->VORLAGE, title->TITEL, des
 Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen. Die sort-buttons  sollen ihren Status sort-btn-active anzeigen wie in jobs.
 Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee.id und emai-_template_id->email_templates_id werden jeweils aufgelöst dargestellt.
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+
+**********************************************************
+Oberhalb der Prozessaufgabenliste soll ein Filter mit folgenden comboboxen und Inhalten erstellt werden:
+Prozess -> tamplates.process_type_id, Location ->templates.location_id, Name-> templates.job_id
+Ein Button "Filtern" am ende der Comboxreihe erstellt die Templateliste unter berücksichtigung der Combobox-Einträge
+
+**********************************************************
+Es erscheint in den Spalten VORLAGE über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Prozessaufgabenliset ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 
 
 **********************************************************
@@ -89,6 +107,9 @@ Mitarbeiter, die sich erfolgreich ausgeloggt haben, sollen nicht in der Lage sei
 
 Mitarbeiter mit der Rolle "Admin" sollen in der Lage sein, auf die Stammdaten- und Management-Seite zuzugreifen, auf der sie alle Mitarbeiter, Vorlagen und Aufgaben verwalten können.
 Mitarbeiter mit der Rolle "Manager" sollen in der Lage sein, auf die Management-Seiten zuzugreifen, auf der sie alle Mitarbeiter, Vorlagen und Aufgaben verwalten können.
+
+***************************************************
+Das Login erwartet die Einträge Benutzername aus employees.username (nicht die E-Mail-Adresse) und dem Passwort password_hash aus employees.password_hash.
 
 
 **********************************************************
@@ -112,3 +133,6 @@ Der Titel und die Beschreibung der Aufgabe werden aus den Feldern subject und bo
 
 Jeder Mitarbeiter soll in seinem Dashboard eine Übersicht über seine Aufgaben sehen, die nach Fälligkeitsdatum sortiert ist.
 Jeder Mitarbeiter kann den Status seiner Aufgaben auf "Offen" oder "in Bearbeitung" oder "erledigt" setzen.
+
+*********************************************************
+
