@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Templates{% endblock %}
+
+{% block content %}
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Management</p>
+      <h1>Templates</h1>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Templateliste</h2>
+      <span id="template-count">0 Templates</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Aufgaben</th>
+          </tr>
+        </thead>
+        <tbody id="templates-tbody">
+          <tr><td colspan="3" style="text-align: center;">Lädt...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTemplates();
+    });
+
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/templates');
+        const data = await response.json();
+
+        if (data.success) {
+          const templates = data.templates || [];
+          displayTemplates(templates);
+          document.getElementById('template-count').textContent = `${templates.length} Templates`;
+        } else {
+          document.getElementById('templates-tbody').innerHTML =
+            `<tr><td colspan="3" style="text-align: center; color: red;">${data.message || 'Fehler beim Laden'}</td></tr>`;
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        document.getElementById('templates-tbody').innerHTML =
+          '<tr><td colspan="3" style="text-align: center; color: red;">Fehler beim Laden</td></tr>';
+      }
+    }
+
+    function displayTemplates(templates) {
+      const tbody = document.getElementById('templates-tbody');
+
+      if (templates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Keine Templates gefunden</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = templates.map(t => `
+        <tr>
+          <td>${t.id}</td>
+          <td>${t.name}</td>
+          <td>${t.task_count}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+{% endblock %}

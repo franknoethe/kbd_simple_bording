@@ -105,6 +105,12 @@ def employees_page():
     return render_template("employees.html")
 
 
+@app.route("/templates")
+def templates_page():
+    """Render templates list page"""
+    return render_template("templates.html")
+
+
 @app.route("/api/employees", methods=['GET'])
 def get_employees():
     """Get all employees from database"""
@@ -274,6 +280,34 @@ def delete_employee(employee_id):
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
     finally:
         cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates", methods=['GET'])
+def get_templates():
+    """Get all templates with their process task counts"""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            SELECT t.id, t.name,
+                   COUNT(tt.id) AS task_count
+            FROM templates t
+            LEFT JOIN template_tasks tt ON tt.template_id = t.id
+            GROUP BY t.id, t.name
+            ORDER BY t.id ASC
+        ''')
+        templates = cursor.fetchall()
+        return jsonify({'success': True, 'templates': [dict(row) for row in templates]})
+    except Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
         connection.close()
 
 
