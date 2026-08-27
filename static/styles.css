@@ -686,6 +686,17 @@ th.th-action {
 
 .operation-success { color: var(--green); }
 
+.template-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.template-context strong { color: var(--text); }
+
 .form-message:not(.is-visible) {
   visibility: hidden;
 }

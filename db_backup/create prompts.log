@@ -73,6 +73,13 @@ Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzze
 Im Fall von create und update werden in den Modals die Daten von process_type_id, location_id und job_id jewils in einer Combobox PROZESS, LOCATION und JOB angezeigt und zu auswahl gestellt.  
 
 **********************************************************
+Jeder Zeile der Templateliste erhält in der Spalte AKTIONEN einen Button "Aufgaben".
+Über diesen Button wird mir die Seite Prozessaufgaben mit den zugehörigen Datensätzen template_tasks.id = templates.id aufgerufen.
+Oberhalb der Prozessaufgabenliste erscheint im Header zusätzlich die Informationen von der zugrundeliegenden templates.process_type_id, templates.location_id und templates.job_id in aufgelöster Form.
+Erweitere den Header der Prozessaufgabenliste um zusätzlich der Informationen von der zugrundeliegenden templates.name
+
+**********************************************************
+Erstelle für die Templateliste eine weitere Spalte hinter NAME mit Aufagben und gebe die Anzahl der Prozessaufgaben aus template_tasks zur template_id der Zeile.
 
 
 
@@ -92,6 +99,10 @@ Ein Button "Filtern" am ende der Comboxreihe erstellt die Templateliste unter be
 
 **********************************************************
 Es erscheint in den Spalten VORLAGE über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Prozessaufgabenliset ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+
+**********************************************************
+In den Funktionen Neue Prozessaufgabe und Bearbeiten soll in der Combobox VERANTWORTLICH nur Mitarbeiter der Location aufgelistet werden.
+Hinter den Namen in der Combobox soll ein " | " gefolgt von employees.function_id in aufgelöster Form ausgegeben werden. 
 
 
 **********************************************************

@@ -486,11 +486,14 @@ def get_template_task_options():
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
     try:
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('SELECT id, name FROM templates ORDER BY name ASC')
+        cursor.execute('SELECT id, name, location_id FROM templates ORDER BY name ASC')
         templates = cursor.fetchall()
         cursor.execute('''
-            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            SELECT employees.id, employees.location_id, employees.function_id,
+                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS name,
+                   COALESCE(functions.name, '') AS function_name
             FROM employees
+            LEFT JOIN functions ON functions.id = employees.function_id
             ORDER BY last_name ASC, first_name ASC
         ''')
         employees = cursor.fetchall()
@@ -546,6 +549,20 @@ def get_template_tasks():
         template_id = request.args.get('template_id', type=int)
         filter_sql = ' WHERE template_tasks.template_id = %s' if template_id else ''
         filter_values = (template_id,) if template_id else ()
+        template_context = None
+        if template_id:
+            cursor.execute('''
+                SELECT templates.id, templates.name,
+                       process_types.name AS process_type_name,
+                       locations.name AS location_name,
+                       jobs.name AS job_name
+                FROM templates
+                LEFT JOIN process_types ON process_types.id = templates.process_type_id
+                LEFT JOIN locations ON locations.id = templates.location_id
+                LEFT JOIN jobs ON jobs.id = templates.job_id
+                WHERE templates.id = %s
+            ''', (template_id,))
+            template_context = cursor.fetchone()
         cursor.execute(f'SELECT COUNT(*) AS total {joins}{filter_sql}', filter_values)
         total = cursor.fetchone()['total']
         total_pages = max(1, (total + page_size - 1) // page_size)
@@ -566,7 +583,8 @@ def get_template_tasks():
         ''', filter_values + (page_size, (page - 1) * page_size))
         tasks = [dict(item) for item in cursor.fetchall()]
         return jsonify({'success': True, 'template_tasks': tasks, 'total': total,
-                        'page': page, 'total_pages': total_pages})
+                'page': page, 'total_pages': total_pages,
+                'template_context': dict(template_context) if template_context else None})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
     finally:
