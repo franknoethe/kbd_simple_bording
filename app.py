@@ -179,6 +179,11 @@ def tasks_page():
     return render_template('tasks.html')
 
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+
 @app.route('/api/task-options')
 def task_options():
     connection = get_db_connection()
@@ -188,14 +193,20 @@ def task_options():
     try:
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("""
-            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
-            FROM employees ORDER BY last_name, first_name
+            SELECT employees.id, CONCAT_WS(' ', employees.first_name, employees.last_name) AS name
+            FROM employees
+            JOIN functions ON functions.id = employees.function_id
+            WHERE functions.name = 'Newbie'
+            ORDER BY employees.last_name, employees.first_name
         """)
         employees = cursor.fetchall()
         cursor.execute('SELECT id, name FROM templates WHERE active = TRUE ORDER BY name')
         templates = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM email_templates WHERE active = TRUE ORDER BY name')
+        email_templates = cursor.fetchall()
         return jsonify({'success': True, 'employees': [dict(row) for row in employees],
                         'templates': [dict(row) for row in templates],
+                'email_templates': [dict(row) for row in email_templates],
                         'statuses': TASK_STATUSES})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
@@ -217,20 +228,106 @@ def get_tasks():
         employee_id = request.args.get('employee_id', type=int)
         if not is_manager:
             employee_id = session['user']['id']
-        where = 'WHERE t.employee_id = %s' if employee_id else ''
-        values = (employee_id,) if employee_id else ()
+        filters = {
+            'theme': request.args.get('theme', '').strip(),
+            'employee': request.args.get('employee', '').strip(),
+            'template': request.args.get('template', '').strip(),
+            'due_date': request.args.get('due_date', '').strip(),
+            'created_at': request.args.get('created_at', '').strip(),
+        }
+        where_parts = []
+        values = []
+        if employee_id:
+            where_parts.append('t.employee_id = %s')
+            values.append(employee_id)
+        if len(filters['theme']) >= 3:
+            where_parts.append('t.theme LIKE %s')
+            values.append(f"%{filters['theme']}%")
+        if len(filters['employee']) >= 3:
+            where_parts.append("CONCAT_WS(' ', e.first_name, e.last_name) LIKE %s")
+            values.append(f"%{filters['employee']}%")
+        if len(filters['template']) >= 3:
+            where_parts.append('tt.title LIKE %s')
+            values.append(f"%{filters['template']}%")
+        if filters['due_date']:
+            where_parts.append('CAST(t.due_date AS CHAR) LIKE %s')
+            values.append(f"%{filters['due_date']}%")
+        if filters['created_at']:
+            where_parts.append('CAST(t.created_at AS CHAR) LIKE %s')
+            values.append(f"%{filters['created_at']}%")
+        where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
+        sort_columns = {
+            'theme': 't.theme', 'id': 't.id', 'employee': 'employee_name', 'title': 't.title',
+            'due_date': 't.due_date', 'status': 't.status', 'created_at': 't.created_at',
+        }
+        sort_column = sort_columns.get(request.args.get('sort', 'due_date'), 't.due_date')
+        direction = 'DESC' if request.args.get('direction', 'asc').lower() == 'desc' else 'ASC'
+        try:
+            page = max(1, int(request.args.get('page', 1)))
+        except (TypeError, ValueError):
+            page = 1
+        page_size = 800
+        filter_values = tuple(values)
+        cursor.execute(f'''SELECT COUNT(*) AS total
+            FROM tasks t JOIN employees e ON e.id = t.employee_id
+            LEFT JOIN template_tasks tt ON tt.id = t.template_task_id {where}''', filter_values)
+        total = cursor.fetchone()['total']
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        values.extend([page_size, (page - 1) * page_size])
         cursor.execute(f"""
-            SELECT t.id, t.employee_id, t.template_task_id, t.title, t.description,
+                 SELECT t.id, t.theme, t.employee_id, t.template_task_id, t.email_template_id,
+                     t.title, t.description,
                    t.due_date, t.status, t.created_at,
                    CONCAT_WS(' ', e.first_name, e.last_name) AS employee_name,
                    tt.title AS template_task_title
             FROM tasks t
             JOIN employees e ON e.id = t.employee_id
-            JOIN template_tasks tt ON tt.id = t.template_task_id
+            LEFT JOIN template_tasks tt ON tt.id = t.template_task_id
             {where}
-            ORDER BY t.due_date ASC, t.id ASC
-        """, values)
-        return jsonify({'success': True, 'tasks': [task_payload(row) for row in cursor.fetchall()]})
+            ORDER BY {sort_column} {direction}, t.id ASC
+            LIMIT %s OFFSET %s
+        """, tuple(values))
+        return jsonify({'success': True, 'tasks': [task_payload(row) for row in cursor.fetchall()],
+                        'total': total, 'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks/suggestions')
+def task_suggestions():
+    field = request.args.get('field', '')
+    query = request.args.get('q', '').strip()
+    if field not in {'theme', 'employee', 'template', 'due_date', 'created_at'} or len(query) < 3:
+        return jsonify({'success': True, 'suggestions': []})
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        if field == 'theme':
+            sql = """SELECT DISTINCT t.theme AS value, t.theme AS label
+                FROM tasks t WHERE t.theme LIKE %s ORDER BY label LIMIT 10"""
+        elif field == 'employee':
+            sql = """SELECT DISTINCT e.id AS value,
+                CONCAT_WS(' ', e.first_name, e.last_name) AS label
+                FROM tasks t JOIN employees e ON e.id = t.employee_id
+                WHERE CONCAT_WS(' ', e.first_name, e.last_name) LIKE %s
+                ORDER BY label LIMIT 10"""
+        elif field == 'template':
+            sql = """SELECT DISTINCT tt.id AS value, tt.title AS label
+                FROM tasks t JOIN template_tasks tt ON tt.id = t.template_task_id
+                WHERE tt.title LIKE %s ORDER BY label LIMIT 10"""
+        else:
+            column = 't.due_date' if field == 'due_date' else 't.created_at'
+            sql = f"SELECT DISTINCT CAST({column} AS CHAR) AS value, CAST({column} AS CHAR) AS label FROM tasks WHERE CAST({column} AS CHAR) LIKE %s ORDER BY value LIMIT 10"
+        cursor.execute(sql, (f'%{query}%',))
+        return jsonify({'success': True, 'suggestions': [dict(row) for row in cursor.fetchall()]})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
     finally:
@@ -257,11 +354,15 @@ def assign_tasks():
     cursor = None
     try:
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('SELECT id FROM employees WHERE id = %s', (employee_id,))
-        if not cursor.fetchone():
+        cursor.execute('''
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            FROM employees WHERE id = %s
+        ''', (employee_id,))
+        employee = cursor.fetchone()
+        if not employee:
             return jsonify({'success': False, 'message': 'Mitarbeiter nicht gefunden.'}), 404
         cursor.execute('''
-            SELECT id, title, description, due_offset_days
+            SELECT id, title, description, due_offset_days, email_template_id
             FROM template_tasks WHERE template_id = %s ORDER BY step, id
         ''', (template_id,))
         template_tasks = cursor.fetchall()
@@ -270,14 +371,107 @@ def assign_tasks():
         for template_task in template_tasks:
             due_date = entry_date + timedelta(days=int(template_task['due_offset_days'] or 0))
             cursor.execute('''
-                INSERT INTO tasks (employee_id, template_task_id, title, description, due_date, status)
-                VALUES (%s, %s, %s, %s, %s, 'open')
-            ''', (employee_id, template_task['id'], template_task['title'],
-                  template_task['description'], due_date))
+                                INSERT INTO tasks
+                                    (theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
+                                VALUES (%s, %s, %s, %s, %s, %s, 'open', %s)
+                            ''', (employee['name'], employee_id, template_task['id'], template_task['title'],
+                                  template_task['description'], due_date, template_task['email_template_id']))
         connection.commit()
         return jsonify({'success': True, 'created': len(template_tasks)}), 201
     except Error as error:
         connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks/single', methods=['POST'])
+def create_single_task():
+    data = request.get_json(silent=True) or {}
+    try:
+        due_date = date.fromisoformat(data['due_date'])
+    except (KeyError, TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Ein gültiges Fälligkeitsdatum ist erforderlich.'}), 400
+    title = str(data.get('title', '')).strip()
+    if not title:
+        return jsonify({'success': False, 'message': 'Ein Titel ist erforderlich.'}), 400
+    if due_date < date.today():
+        return jsonify({'success': False, 'message': 'Das Fälligkeitsdatum darf nicht in der Vergangenheit liegen.'}), 400
+    try:
+        email_template_id = int(data['email_template_id']) if data.get('email_template_id') else None
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Ungültige E-Mail-Vorlage.'}), 400
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute('''
+                        INSERT INTO tasks (theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
+                        VALUES (%s, %s, NULL, %s, %s, %s, 'open', %s)
+                ''', (str(data.get('theme', '')).strip(), session['user']['id'], title,
+                            str(data.get('description', '')).strip(), due_date, email_template_id))
+        connection.commit()
+        return jsonify({'success': True, 'id': cursor.lastrowid}), 201
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    if current_user_role().casefold() not in {'admin', 'manager'}:
+        return jsonify({'success': False, 'message': 'Keine Berechtigung.'}), 403
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM tasks WHERE id = %s', (task_id,))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return jsonify({'success': False, 'message': 'Aufgabe nicht gefunden.'}), 404
+        connection.commit()
+        return jsonify({'success': True})
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route('/api/tasks/<int:task_id>/email-preview')
+def task_email_preview(task_id):
+    connection = get_db_connection()
+    if not connection:
+        return task_connection_error()
+    cursor = None
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            SELECT t.id, t.email_template_id, t.title AS task_title,
+                   et.name, et.subject, et.body_html, et.body_text
+            FROM tasks t
+            LEFT JOIN email_templates et ON et.id = t.email_template_id
+            WHERE t.id = %s
+        ''', (task_id,))
+        task = cursor.fetchone()
+        if not task:
+            return jsonify({'success': False, 'message': 'Aufgabe nicht gefunden.'}), 404
+        if task['email_template_id'] is None:
+            return jsonify({'success': False, 'message': 'Für diese Aufgabe ist keine E-Mail-Vorlage hinterlegt.'}), 404
+        return jsonify({'success': True, 'email_template': dict(task)})
+    except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
     finally:
         if cursor:
@@ -630,7 +824,7 @@ def create_template_task():
 
 def _template_task_values(data):
     """Validate and normalize template task input."""
-    required_ids = ('template_id', 'responsible_function_id', 'email_template_id')
+    required_ids = ('template_id', 'responsible_function_id')
     if any(data.get(field) in (None, '') for field in required_ids):
         raise ValueError('Referenz fehlt.')
     title = str(data.get('title', '')).strip()
@@ -639,7 +833,8 @@ def _template_task_values(data):
     return (
         int(data.get('step', 0)), int(data['template_id']), title,
         str(data.get('description', '')), int(data.get('due_offset_days', 0)),
-        int(data['responsible_function_id']), int(data['email_template_id']),
+        int(data['responsible_function_id']),
+        int(data['email_template_id']) if data.get('email_template_id') else None,
         bool(data.get('mandatory', False)),
     )
 
@@ -794,7 +989,10 @@ def get_templates():
             SELECT templates.id, templates.process_type_id, process_types.name AS process_type_name,
                    templates.location_id, locations.name AS location_name,
                    templates.job_id, jobs.name AS job_name,
-                   templates.name, templates.active
+                   templates.name,
+                   (SELECT COUNT(*) FROM template_tasks
+                    WHERE template_tasks.template_id = templates.id) AS task_count,
+                   templates.active
             FROM templates
             LEFT JOIN process_types ON process_types.id = templates.process_type_id
             LEFT JOIN locations ON locations.id = templates.location_id
@@ -806,6 +1004,91 @@ def get_templates():
         templates = [dict(item) for item in cursor.fetchall()]
         return jsonify({'success': True, 'templates': templates, 'total': total,
                         'page': page, 'total_pages': total_pages})
+    except Error as error:
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates/<int:template_id>/copy-tasks", methods=['POST'])
+def copy_template_tasks(template_id):
+    """Copy all process tasks from one template to an empty template."""
+    data = request.get_json(silent=True) or {}
+    try:
+        target_template_id = int(data.get('target_template_id'))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Ziel-Template ist erforderlich.'}), 400
+    if target_template_id == template_id:
+        return jsonify({'success': False, 'message': 'Quell- und Ziel-Template müssen verschieden sein.'}), 400
+
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT id FROM templates WHERE id IN (%s, %s)', (template_id, target_template_id))
+        if len(cursor.fetchall()) != 2:
+            return jsonify({'success': False, 'message': 'Quell- oder Ziel-Template nicht gefunden.'}), 404
+        cursor.execute('SELECT COUNT(*) AS total FROM template_tasks WHERE template_id = %s', (template_id,))
+        source_count = cursor.fetchone()['total']
+        if source_count == 0:
+            return jsonify({'success': False, 'message': 'Das Quell-Template enthält keine Prozessaufgaben.'}), 400
+        cursor.execute('SELECT COUNT(*) AS total FROM template_tasks WHERE template_id = %s', (target_template_id,))
+        if cursor.fetchone()['total'] != 0:
+            return jsonify({'success': False, 'message': 'Das Ziel-Template enthält bereits Prozessaufgaben.'}), 409
+        cursor.execute('''
+            INSERT INTO template_tasks
+                (step, template_id, title, description, due_offset_days,
+                 responsible_function_id, email_template_id, mandatory)
+            SELECT step, %s, title, description, due_offset_days,
+                   responsible_function_id, email_template_id, mandatory
+            FROM template_tasks
+            WHERE template_id = %s
+            ORDER BY step, id
+        ''', (target_template_id, template_id))
+        connection.commit()
+        return jsonify({'success': True, 'copied': cursor.rowcount}), 201
+    except Error as error:
+        connection.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+@app.route("/api/templates/copy-options", methods=['GET'])
+def get_template_copy_options():
+    """Return templates that do not contain process tasks."""
+    connection = get_db_connection()
+    cursor = None
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        source_template_id = request.args.get('exclude_id', type=int)
+        exclude_sql = 'AND templates.id <> %s' if source_template_id else ''
+        values = (source_template_id,) if source_template_id else ()
+        cursor.execute('''
+            SELECT templates.id, templates.name, 0 AS task_count,
+                   process_types.name AS process_type_name,
+                   locations.name AS location_name,
+                   jobs.name AS job_name
+            FROM templates
+            LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            LEFT JOIN locations ON locations.id = templates.location_id
+            LEFT JOIN jobs ON jobs.id = templates.job_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM template_tasks
+                WHERE template_tasks.template_id = templates.id
+            )
+            ''' + exclude_sql + '''
+            ORDER BY templates.name ASC
+        ''', values)
+        return jsonify({'success': True, 'templates': [dict(item) for item in cursor.fetchall()]})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {str(error)}'}), 500
     finally:

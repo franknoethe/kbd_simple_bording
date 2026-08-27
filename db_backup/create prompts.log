@@ -1,4 +1,10 @@
 **********************************************************
+ //* Allgemeines Layout
+*********************************************************
+Die class "maincontent" und "sidebar" sollen getrennt scrollbar sein.
+
+
+**********************************************************
  //* CRUD for locations
 *********************************************************
 Erstelle für die Tabelle locations eine CRUD-Seite mit Navigationseintrag, PostgreSQL-API und Formular. Verwende die Spalten id, name und active. 
@@ -78,9 +84,20 @@ Jeder Zeile der Templateliste erhält in der Spalte AKTIONEN einen Button "Aufga
 Oberhalb der Prozessaufgabenliste erscheint im Header zusätzlich die Informationen von der zugrundeliegenden templates.process_type_id, templates.location_id und templates.job_id in aufgelöster Form.
 Erweitere den Header der Prozessaufgabenliste um zusätzlich der Informationen von der zugrundeliegenden templates.name
 
-**********************************************************
 Erstelle für die Templateliste eine weitere Spalte hinter NAME mit Aufagben und gebe die Anzahl der Prozessaufgaben aus template_tasks zur template_id der Zeile.
+Enteferne die Spalte AUFGABEN und setzte die Button aus der Spalte in die Spalte AKTIONEN
 
+Die Tabelle Templateliste erhält einen Button "Kopieren" in der Spalte AKTIONEN. 
+Dieser wird nur angezeigt wenn die Anzahl der template_tasks >0 ist. 
+Mit einem Klick auf "Kopieren" öffnet sich ein Fenster mit eine Combobox "KOPIERN AUF TEMPLATE" mit allen Templates mit 0 template_tasks.
+Zudem erhält das Fenster einen Button "Übernehmen" der nur aktiv ist wenn eine Auswahl aus der Combobox getroffen wurde.
+Bei der Übernahme werden alle template_tasks von dem Basis-Template auf das gewählte übertragen.
+
+Es in der Combo KOPIEREN AUF TEMPLATE werden nicht die Templates ohne Aufgaben zur Auswahl gelistet.
+Immer noch nicht die Combobox zeigt "Nicht verfügbar". Es sollen die Templates aufgelistet werden die in template_tasks keine Einträge haben.
+
+Super! Erweitere den Eintrag in der Combobox mit den Werten process_id_type, location_id und job_id in aufgelöster Form getrennt mit " | "
+Bei der Übernahme passiert noch nichts, es sollen alle template_tasks von dem Basis-Template auf das gewählte übertragen werden.
 
 
 **********************************************************
@@ -92,18 +109,20 @@ Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hint
 Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee.id und emai-_template_id->email_templates_id werden jeweils aufgelöst dargestellt.
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
-**********************************************************
+*********************************************************
 Oberhalb der Prozessaufgabenliste soll ein Filter mit folgenden comboboxen und Inhalten erstellt werden:
 Prozess -> tamplates.process_type_id, Location ->templates.location_id, Name-> templates.job_id
 Ein Button "Filtern" am ende der Comboxreihe erstellt die Templateliste unter berücksichtigung der Combobox-Einträge
 
-**********************************************************
 Es erscheint in den Spalten VORLAGE über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Prozessaufgabenliset ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 
-**********************************************************
 In den Funktionen Neue Prozessaufgabe und Bearbeiten soll in der Combobox VERANTWORTLICH nur Mitarbeiter der Location aufgelistet werden.
 Hinter den Namen in der Combobox soll ein " | " gefolgt von employees.function_id in aufgelöster Form ausgegeben werden. 
 
+Bei der Anlage von Neue Prozessaufgabe soll Eingabefenster keine Combobox zur Auswahl von STEP sondern der höchste Wert von template_tasks.step + 1 als Text ausgegben werden.
+Bei der Anlage von Neue Prozessaufgabe wird ein zusätliches Item der Combobox EMAIL nach oben mit dem Wert "Keine" der bestehenden Auswahl hinzugefügt.
+
+Jede VORLAGE soll in der Prozessaufgabenliste optisch durch Kontainer <div> getrennt werden. Die Kontainer erhalten eine eigene Hintergrundfarbe.
 
 **********************************************************
  //* Login
@@ -146,4 +165,31 @@ Jeder Mitarbeiter soll in seinem Dashboard eine Übersicht über seine Aufgaben 
 Jeder Mitarbeiter kann den Status seiner Aufgaben auf "Offen" oder "in Bearbeitung" oder "erledigt" setzen.
 
 *********************************************************
+Widmen wir uns wieder den tasks Aufgebenliste.
+Ändere die Tabelle tasks Aufgabenliste Als CRUD Seite mit eigenem Editierfenster wie in den anderen Ansichten auch.
+Ich möchte die Tabelle in der Spalte ID, MITARBEITER, TITEL, FÄLLIG; STATUS und ERSTELLT AM nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+Es erscheint in den Spalten MITARBEITER, VORLAGE, FÄLLIG und ERSTELLT AM über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
+Es fehlt der buttton Löschen in der Spalte AKTIONEN, zudem ein Fehler: GET http://127.0.0.1:5000/favicon.ico 404 (NOT FOUND)
+Die letzte Zeile mit der Navigation wird erst angezeigt wenn die Datenmenge > 800 Zeilen ist.
+Im Fenster Aufgaben Zuweisen werden in der Combobox Mitarbeiter Ausschließlich Mitarbeite mit der Funktion "Newbie" aufgelistet.
+Beim Speichern mit Zuweisen wird in der Tabelle tasks ein Datenfeld ergänzt und mit dem Wert der email_template_id ergänzt.
+Die Aufgabenliste soll vor der Spalte Mitearbeiter eine weitere "THEMA" erstellt werden.
+Beim Speichern mit Zuweisen wird in der Tabelle tasks ein Datenfeld  task.theme ergänzt und mit dem Wert der Combobox "MITARBEITER" aus "Aufgaben zuweisen" ergänzt.
 
+Im Fenster Aufgaben zuweisen werden die Elemente task-template, task-entry-date, task-employee in einem Container "task-add-via-template" gesteckt.
+Zudem wird ein weiterer Container "task-add-singlejob" erstellt in dem die Elemente: Textfeld "Thema", Datetime-Picker "Fällig", Textfeld "Titel", Textfeld "Beschreibung".
+Der Container "task-add-via-template" ist ausgeblendet.
+Unterhalb der Überschrift ist ein Schieberegler "Aufgaben aus Vorlage" für zwei Zustände: 1. hide "task-add-via-template" show "task-add-singlejob". Zustand 2. wechselt die Container-Ansicht.
+
+Im Container "task-add-singlejob" wird eine Combobox "Email" erstellt mit einer Liste der email_templates.name mit einem angeführten Item "Keine".
+Das Datetime-Picker "Fällig" wird ein Date-Picker.
+
+Die Tabelle Aufgabenliste erhält einen Button "Mail" in der Spalte Aktionen, wenn der Wert tasks_email_template_id <> NULL ist.
+Mit einem Klick auf den Button "Mail" wird ein Vorschaufenster wie der Vorschau für die E-Mail-Vorlagen erstellt.
+Ich möchte die Tabelle in der THEMA nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+Es erscheint in den Spalten THEMA über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Email Vorlagenlisteliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+
+Die Combobox "Email" wird nicht mit Daten aus email_templates.name gefüllt. Zudem Fehler beim speichern mit Zuweisen und der task-mode-toggle "off": tasks:147  POST http://127.0.0.1:5000/api/tasks/single 404 (NOT FOUND)
+(anonymous) @ tasks:147
+VM938:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
