@@ -37,6 +37,7 @@
         <div class="form-group"><label for="task-template">Vorlage</label><select id="task-template"></select></div>
       </div>
       <div id="task-add-singlejob" class="task-assignment-container">
+        <div class="form-group"><label for="single-task-employee">Aufgabe für</label><select id="single-task-employee" required></select></div>
         <div class="form-group"><label for="single-task-theme">Thema</label><input id="single-task-theme" type="text"></div>
         <div class="form-group"><label for="single-task-due-date">Fällig</label><input id="single-task-due-date" type="date"></div>
         <div class="form-group"><label for="single-task-title">Titel</label><input id="single-task-title" type="text"></div>
@@ -72,6 +73,7 @@
     if (!data.success) throw new Error(data.message);
     document.getElementById('task-employee').innerHTML = data.employees.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
     document.getElementById('task-template').innerHTML = data.templates.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+    document.getElementById('single-task-employee').innerHTML = (data.all_employees || data.employees).map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
     document.getElementById('single-task-email').innerHTML = '<option value="">Keine</option>' + (data.email_templates || []).map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
   }
   let taskPage = 1; let taskTotalPages = 1; let taskSort = 'due_date'; let taskDirection = 'asc';
@@ -100,7 +102,7 @@
     const templateMode = document.getElementById('task-mode-toggle').checked;
     const payload = templateMode
       ? {employee_id: document.getElementById('task-employee').value, entry_date: document.getElementById('task-entry-date').value, template_id: document.getElementById('task-template').value}
-      : {theme: document.getElementById('single-task-theme').value, due_date: document.getElementById('single-task-due-date').value, title: document.getElementById('single-task-title').value, description: document.getElementById('single-task-description').value, email_template_id: document.getElementById('single-task-email').value || null};
+      : {employee_id: document.getElementById('single-task-employee').value, theme: document.getElementById('single-task-theme').value, due_date: document.getElementById('single-task-due-date').value, title: document.getElementById('single-task-title').value, description: document.getElementById('single-task-description').value, email_template_id: document.getElementById('single-task-email').value || null};
     const response = await fetch(templateMode ? '/api/tasks' : '/api/tasks/single', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
     const data = await response.json(); showTaskMessage(data.success ? `${data.created} Aufgaben zugewiesen.` : data.message, formMessage); if (data.success) { taskModal.classList.add('is-hidden'); loadTasks(); }
   });

@@ -204,9 +204,16 @@ def task_options():
         templates = cursor.fetchall()
         cursor.execute('SELECT id, name FROM email_templates WHERE active = TRUE ORDER BY name')
         email_templates = cursor.fetchall()
+        cursor.execute('''
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            FROM employees
+            ORDER BY last_name, first_name
+        ''')
+        all_employees = cursor.fetchall()
         return jsonify({'success': True, 'employees': [dict(row) for row in employees],
                         'templates': [dict(row) for row in templates],
                 'email_templates': [dict(row) for row in email_templates],
+                'all_employees': [dict(row) for row in all_employees],
                         'statuses': TASK_STATUSES})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
@@ -362,19 +369,27 @@ def assign_tasks():
         if not employee:
             return jsonify({'success': False, 'message': 'Mitarbeiter nicht gefunden.'}), 404
         cursor.execute('''
-            SELECT id, title, description, due_offset_days, email_template_id
-            FROM template_tasks WHERE template_id = %s ORDER BY step, id
+            SELECT template_tasks.id, template_tasks.title, template_tasks.description,
+                   template_tasks.due_offset_days, template_tasks.email_template_id,
+                   template_tasks.responsible_function_id,
+                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS responsible_name
+            FROM template_tasks
+            LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
+            WHERE template_tasks.template_id = %s
+            ORDER BY template_tasks.step, template_tasks.id
         ''', (template_id,))
         template_tasks = cursor.fetchall()
         if not template_tasks:
             return jsonify({'success': False, 'message': 'Die Vorlage enthält keine Aufgaben.'}), 400
+        if any(task['responsible_function_id'] is None for task in template_tasks):
+            return jsonify({'success': False, 'message': 'Alle Vorlagenaufgaben benötigen einen Verantwortlichen.'}), 400
         for template_task in template_tasks:
             due_date = entry_date + timedelta(days=int(template_task['due_offset_days'] or 0))
             cursor.execute('''
                                 INSERT INTO tasks
                                     (theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
                                 VALUES (%s, %s, %s, %s, %s, %s, 'open', %s)
-                            ''', (employee['name'], employee_id, template_task['id'], template_task['title'],
+                            ''', (template_task['responsible_name'], template_task['responsible_function_id'], template_task['id'], template_task['title'],
                                   template_task['description'], due_date, template_task['email_template_id']))
         connection.commit()
         return jsonify({'success': True, 'created': len(template_tasks)}), 201
@@ -390,6 +405,10 @@ def assign_tasks():
 @app.route('/api/tasks/single', methods=['POST'])
 def create_single_task():
     data = request.get_json(silent=True) or {}
+    try:
+        employee_id = int(data['employee_id'])
+    except (KeyError, TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Ein Mitarbeiter ist erforderlich.'}), 400
     try:
         due_date = date.fromisoformat(data['due_date'])
     except (KeyError, TypeError, ValueError):
@@ -409,10 +428,13 @@ def create_single_task():
     cursor = None
     try:
         cursor = connection.cursor()
+        cursor.execute('SELECT id FROM employees WHERE id = %s', (employee_id,))
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Mitarbeiter nicht gefunden.'}), 404
         cursor.execute('''
                         INSERT INTO tasks (theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
                         VALUES (%s, %s, NULL, %s, %s, %s, 'open', %s)
-                ''', (str(data.get('theme', '')).strip(), session['user']['id'], title,
+                ''', (str(data.get('theme', '')).strip(), employee_id, title,
                             str(data.get('description', '')).strip(), due_date, email_template_id))
         connection.commit()
         return jsonify({'success': True, 'id': cursor.lastrowid}), 201
@@ -458,13 +480,17 @@ def task_email_preview(task_id):
     cursor = None
     try:
         cursor = connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('''
+        owner_filter = '' if current_user_role().casefold() in {'admin', 'manager'} else ' AND t.employee_id = %s'
+        values = [task_id]
+        if owner_filter:
+            values.append(session['user']['id'])
+        cursor.execute(f'''
             SELECT t.id, t.email_template_id, t.title AS task_title,
                    et.name, et.subject, et.body_html, et.body_text
             FROM tasks t
             LEFT JOIN email_templates et ON et.id = t.email_template_id
-            WHERE t.id = %s
-        ''', (task_id,))
+            WHERE t.id = %s{owner_filter}
+        ''', values)
         task = cursor.fetchone()
         if not task:
             return jsonify({'success': False, 'message': 'Aufgabe nicht gefunden.'}), 404

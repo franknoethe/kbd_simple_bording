@@ -519,8 +519,8 @@ th.th-action {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #fd8b05;
+  color: #000;
   font-weight: 700;
 }
 
@@ -555,7 +555,7 @@ th.th-action {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #1b5cff, #60a5fa);
+  background: linear-gradient(90deg, #fd8b05, #fd8b0500);
 }
 
 /* Employee CRUD modal and form controls */

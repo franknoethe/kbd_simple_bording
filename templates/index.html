@@ -5,39 +5,38 @@
 {% block content %}
   <header class="topbar">
     <div>
-      <p class="eyebrow">Overview</p>
+      <p class="eyebrow">Übersicht</p>
       <h1>Onboarding Dashboard</h1>
     </div>
-    <button class="primary-btn">New candidate</button>
   </header>
 
   <section class="stats-grid">
     <article class="stat-card">
-      <span>Total Employees</span>
+      <span>Gesamte Mitarbeiter</span>
       <strong>{{ stats.total }}</strong>
-      <small>Active onboarding</small>
+      <small>Aktives Onboarding</small>
     </article>
     <article class="stat-card accent-blue">
-      <span>Approved</span>
+      <span>Genehmigt</span>
       <strong>{{ stats.approved }}</strong>
-      <small>Ready to start</small>
+      <small>Bereit zum Start</small>
     </article>
     <article class="stat-card accent-gold">
-      <span>In Progress</span>
+      <span>In Bearbeitung</span>
       <strong>{{ stats.in_progress }}</strong>
-      <small>Currently onboarded</small>
+      <small>Derzeit im Onboarding</small>
     </article>
     <article class="stat-card accent-red">
-      <span>Pending</span>
+      <span>Ausstehend</span>
       <strong>{{ stats.pending }}</strong>
-      <small>Needs action</small>
+      <small>Benötigt Aktion</small>
     </article>
   </section>
 
   <section class="panel">
     <div class="panel-header">
-      <h2>Candidate overview</h2>
-      <span>Average progress: {{ stats.avg_progress }}%</span>
+      <h2>Kandidatenübersicht</h2>
+      <span>Durchschnittlicher Fortschritt: {{ stats.avg_progress }}%</span>
     </div>
 
     <div class="table-wrap">
@@ -106,8 +105,8 @@
   <section class="panel dashboard-tasks">
     <div class="panel-header"><h2>Meine Aufgaben</h2><span id="dashboard-task-count">Lädt...</span></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Titel</th><th>Beschreibung</th><th>Fällig</th><th>Status</th><th></th></tr></thead>
-      <tbody id="dashboard-tasks-tbody"><tr><td colspan="5" class="table-message">Lädt...</td></tr></tbody>
+      <thead><tr><th>THEMA</th><th>Titel</th><th>Beschreibung</th><th>Fällig</th><th>Status</th><th>AKTIONEN</th></tr></thead>
+      <tbody id="dashboard-tasks-tbody"><tr><td colspan="6" class="table-message">Lädt...</td></tr></tbody>
     </table></div>
   </section>
   <script>
@@ -116,16 +115,33 @@
     async function loadDashboardTasks() {
       const response = await fetch('/api/tasks'); const data = await response.json();
       const body = document.getElementById('dashboard-tasks-tbody');
-      if (!data.success) { body.innerHTML = `<tr><td colspan="5" class="table-message table-message-error">${dashboardEscape(data.message)}</td></tr>`; return; }
+      if (!data.success) { body.innerHTML = `<tr><td colspan="6" class="table-message table-message-error">${dashboardEscape(data.message)}</td></tr>`; return; }
       document.getElementById('dashboard-task-count').textContent = `${data.tasks.length} Aufgaben`;
-      body.innerHTML = data.tasks.length ? data.tasks.map(task => `<tr><td>${dashboardEscape(task.title)}</td><td>${dashboardEscape(task.description)}</td><td>${dashboardEscape(task.due_date)}</td><td><select class="dashboard-task-status" data-id="${task.id}">${Object.entries(dashboardStatuses).map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td><button type="button" class="secondary-btn dashboard-task-save" data-id="${task.id}">Speichern</button></td></tr>`).join('') : '<tr><td colspan="5" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+      body.innerHTML = data.tasks.length ? data.tasks.map(task => `<tr><td>${dashboardEscape(task.theme)}</td><td>${dashboardEscape(task.title)}</td><td>${dashboardEscape(task.description)}</td><td>${dashboardEscape(task.due_date)}</td><td><select class="dashboard-task-status" data-id="${task.id}">${Object.entries(dashboardStatuses).map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td class="action-btns"><button type="button" class="secondary-btn dashboard-task-save" data-id="${task.id}">Speichern</button>${task.email_template_id !== null && task.email_template_id !== undefined ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}">Mail</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
       document.querySelectorAll('.dashboard-task-save').forEach(button => button.addEventListener('click', async () => {
         const status = document.querySelector(`.dashboard-task-status[data-id="${button.dataset.id}"]`).value;
         const task = data.tasks.find(item => String(item.id) === button.dataset.id);
         const update = await fetch(`/api/tasks/${button.dataset.id}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: task.title, description: task.description, due_date: task.due_date, status})});
         if (update.ok) loadDashboardTasks();
       }));
+      document.querySelectorAll('.dashboard-task-mail').forEach(button => button.addEventListener('click', () => openDashboardTaskMail(button.dataset.id)));
     }
+    async function openDashboardTaskMail(taskId) {
+      const response = await fetch(`/api/tasks/${taskId}/email-preview`);
+      const data = await response.json();
+      if (!response.ok || !data.success) { window.alert(data.message || 'E-Mail-Vorschau konnte nicht geladen werden.'); return; }
+      const template = data.email_template;
+      document.getElementById('dashboard-task-mail-title').textContent = `E-Mail-Vorschau: ${template.subject || ''}`;
+      document.getElementById('dashboard-task-mail-html').srcdoc = template.body_html || '';
+      document.getElementById('dashboard-task-mail-text').textContent = template.body_text || '';
+      document.getElementById('dashboard-task-mail-modal').classList.remove('is-hidden');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('dashboard-task-mail-close').addEventListener('click', () => document.getElementById('dashboard-task-mail-modal').classList.add('is-hidden'));
+    });
     loadDashboardTasks();
   </script>
+  <div id="dashboard-task-mail-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="dashboard-task-mail-title">
+    <div class="modal preview-modal"><div class="modal-header"><h2 id="dashboard-task-mail-title">E-Mail-Vorschau</h2><button class="close-btn" id="dashboard-task-mail-close" type="button" aria-label="Dialog schließen">&times;</button></div><iframe id="dashboard-task-mail-html" title="E-Mail HTML-Vorschau" sandbox=""></iframe><pre id="dashboard-task-mail-text" class="text-preview"></pre></div>
+  </div>
 {% endblock %}

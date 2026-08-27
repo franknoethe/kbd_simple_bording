@@ -193,3 +193,24 @@ Es erscheint in den Spalten THEMA über der jeweiligen Spaltenüberschrift ein T
 Die Combobox "Email" wird nicht mit Daten aus email_templates.name gefüllt. Zudem Fehler beim speichern mit Zuweisen und der task-mode-toggle "off": tasks:147  POST http://127.0.0.1:5000/api/tasks/single 404 (NOT FOUND)
 (anonymous) @ tasks:147
 VM938:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+
+Im Container "task-add-singlejob" wird eine Combobox "Aufgabe für" erstellt mit einer Liste der emplyees.first_name " | " empoyees.lastname.
+Beim Speichern mit Zuweisen wird tasks.employee_id dem Wert der Combobox "Aufgabe für" zugewiesen.
+Im Container "task-add-singlejob" wird in Combobox "Aufgabe für" eine Liste aller employees erstellt.
+
+Speichern mit Zuweisen und task-mode-toggle "on" wird tasks.employee_id dem Wert aus der Tabelle tamplate_tasks.responsible_function_id zugewiesen.
+
+
+**********************************************************
+ //* Dashboard
+*********************************************************
+Im "panel dashboard-tasks" werden alle tasks gelistet die dem Login employee entesprechen
+Die Spalte "THEMA" hinzufügen vor "TITEL" -> tasks.theme
+Letzter Spaltentitel "AKTIONEN"
+Spalte "AKTIONEN" erhält einen Button "Mail" wenn der Wert tasks_email_template_id <> NULL ist.
+Klick auf Button "Mail" wird ein Vorschaufenster wie der Vorschau für die E-Mail-Vorlagen erstellt.
+
+
+
+Status soll als Button in den Farben rot -> due_date < heute, gelb -> in_progress, grün -> open. Nach einem Klick auf dem Button öffnet sich ein Poppup mit den Werten Offen, In Bearbeitung, Fertig
+
