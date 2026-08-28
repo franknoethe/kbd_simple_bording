@@ -6,15 +6,15 @@
   <header class="topbar">
     <div>
       <p class="eyebrow">Stammdaten</p>
-      <h1>Prozessarten</h1>
+      <h1>Prozesse</h1>
     </div>
-    <button class="primary-btn" id="add-process-type-btn" type="button">Neue Prozessart</button>
+    <button class="primary-btn" id="add-process-type-btn" type="button">Neuer Prozess</button>
   </header>
 
   <section class="panel">
     <div class="panel-header">
-      <h2>Prozessartenliste</h2>
-      <span id="process-type-count">0 Prozessarten</span>
+      <h2>Prozessliste</h2>
+      <span id="process-type-count">0 Prozesse</span>
     </div>
 
     <div class="table-wrap">
@@ -47,7 +47,7 @@
   <div id="process-type-modal-overlay" class="modal-overlay is-hidden">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="process-type-modal-title">
       <div class="modal-header">
-        <h2 id="process-type-modal-title">Neue Prozessart</h2>
+        <h2 id="process-type-modal-title">Neuer Prozess</h2>
         <button class="close-btn" id="close-process-type-modal" type="button" aria-label="Dialog schließen">&times;</button>
       </div>
 
@@ -166,7 +166,7 @@
 
     function openNewProcessTypeModal() {
       currentProcessTypeId = null;
-      document.getElementById('process-type-modal-title').textContent = 'Neue Prozessart';
+      document.getElementById('process-type-modal-title').textContent = 'Neuer Prozess';
       document.getElementById('process-type-form').reset();
       setProcessTypeFormMessage('');
       showProcessTypeModal();
@@ -176,7 +176,7 @@
       const item = processTypes.find(entry => entry.id === processTypeId);
       if (!item) return;
       currentProcessTypeId = processTypeId;
-      document.getElementById('process-type-modal-title').textContent = 'Prozessart bearbeiten';
+      document.getElementById('process-type-modal-title').textContent = 'Prozess bearbeiten';
       document.getElementById('process-type-id').value = item.id;
       document.getElementById('process-type-name').value = item.name;
       setProcessTypeFormMessage('');

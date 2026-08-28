@@ -111,20 +111,36 @@
   </section>
   <script>
     const dashboardEscape = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-    const dashboardStatuses = { open: 'Offen', in_progress: 'In Bearbeitung', completed: 'Erledigt' };
+    const dashboardStatuses = { open: 'Offen', in_progress: 'In Bearbeitung', completed: 'Fertig' };
+    const today = new Date().toISOString().slice(0, 10);
+    let dashboardTasks = [];
+    function dashboardStatusColorClass(task) {
+      if (task.due_date && task.due_date < today) return 'status-btn-red';
+      if (task.status === 'in_progress') return 'status-btn-yellow';
+      return 'status-btn-green';
+    }
     async function loadDashboardTasks() {
-      const response = await fetch('/api/tasks'); const data = await response.json();
+      const response = await fetch('/api/tasks?employee_id={{ session["user"]["id"] }}'); const data = await response.json();
       const body = document.getElementById('dashboard-tasks-tbody');
       if (!data.success) { body.innerHTML = `<tr><td colspan="6" class="table-message table-message-error">${dashboardEscape(data.message)}</td></tr>`; return; }
+      dashboardTasks = data.tasks;
       document.getElementById('dashboard-task-count').textContent = `${data.tasks.length} Aufgaben`;
-      body.innerHTML = data.tasks.length ? data.tasks.map(task => `<tr><td>${dashboardEscape(task.theme)}</td><td>${dashboardEscape(task.title)}</td><td>${dashboardEscape(task.description)}</td><td>${dashboardEscape(task.due_date)}</td><td><select class="dashboard-task-status" data-id="${task.id}">${Object.entries(dashboardStatuses).map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td class="action-btns"><button type="button" class="secondary-btn dashboard-task-save" data-id="${task.id}">Speichern</button>${task.email_template_id !== null && task.email_template_id !== undefined ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}">Mail</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
-      document.querySelectorAll('.dashboard-task-save').forEach(button => button.addEventListener('click', async () => {
-        const status = document.querySelector(`.dashboard-task-status[data-id="${button.dataset.id}"]`).value;
-        const task = data.tasks.find(item => String(item.id) === button.dataset.id);
-        const update = await fetch(`/api/tasks/${button.dataset.id}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: task.title, description: task.description, due_date: task.due_date, status})});
-        if (update.ok) loadDashboardTasks();
-      }));
+      body.innerHTML = data.tasks.length ? data.tasks.map(task => `<tr><td>${dashboardEscape(task.theme)}</td><td>${dashboardEscape(task.title)}</td><td>${dashboardEscape(task.description)}</td><td>${dashboardEscape(task.due_date)}</td><td>${dashboardStatuses[task.status] || task.status}</td><td class="action-btns"><button type="button" class="status-btn ${dashboardStatusColorClass(task)} dashboard-task-status-btn" data-id="${task.id}">${dashboardStatuses[task.status] || task.status}</button>${task.email_template_id !== null && task.email_template_id !== undefined ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}">Mail</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+      document.querySelectorAll('.dashboard-task-status-btn').forEach(button => button.addEventListener('click', () => openDashboardStatusPopup(button.dataset.id)));
       document.querySelectorAll('.dashboard-task-mail').forEach(button => button.addEventListener('click', () => openDashboardTaskMail(button.dataset.id)));
+    }
+    function openDashboardStatusPopup(taskId) {
+      document.getElementById('dashboard-status-modal').dataset.taskId = taskId;
+      document.getElementById('dashboard-status-modal').classList.remove('is-hidden');
+    }
+    async function chooseDashboardStatus(status) {
+      const modal = document.getElementById('dashboard-status-modal');
+      const taskId = modal.dataset.taskId;
+      const task = dashboardTasks.find(item => String(item.id) === taskId);
+      modal.classList.add('is-hidden');
+      if (!task) return;
+      const update = await fetch(`/api/tasks/${taskId}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: task.title, description: task.description, due_date: task.due_date, status})});
+      if (update.ok) loadDashboardTasks();
     }
     async function openDashboardTaskMail(taskId) {
       const response = await fetch(`/api/tasks/${taskId}/email-preview`);
@@ -138,10 +154,21 @@
     }
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('dashboard-task-mail-close').addEventListener('click', () => document.getElementById('dashboard-task-mail-modal').classList.add('is-hidden'));
+      document.getElementById('dashboard-status-close').addEventListener('click', () => document.getElementById('dashboard-status-modal').classList.add('is-hidden'));
+      document.querySelectorAll('.dashboard-status-option').forEach(button => button.addEventListener('click', () => chooseDashboardStatus(button.dataset.status)));
     });
     loadDashboardTasks();
   </script>
   <div id="dashboard-task-mail-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="dashboard-task-mail-title">
     <div class="modal preview-modal"><div class="modal-header"><h2 id="dashboard-task-mail-title">E-Mail-Vorschau</h2><button class="close-btn" id="dashboard-task-mail-close" type="button" aria-label="Dialog schließen">&times;</button></div><iframe id="dashboard-task-mail-html" title="E-Mail HTML-Vorschau" sandbox=""></iframe><pre id="dashboard-task-mail-text" class="text-preview"></pre></div>
+  </div>
+  <div id="dashboard-status-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="dashboard-status-title">
+    <div class="modal"><div class="modal-header"><h2 id="dashboard-status-title">Status ändern</h2><button class="close-btn" id="dashboard-status-close" type="button" aria-label="Dialog schließen">&times;</button></div>
+      <div class="status-options">
+        <button type="button" class="status-btn status-btn-green dashboard-status-option" data-status="open">Offen</button>
+        <button type="button" class="status-btn status-btn-yellow dashboard-status-option" data-status="in_progress">In Bearbeitung</button>
+        <button type="button" class="status-btn status-btn-green dashboard-status-option" data-status="completed">Fertig</button>
+      </div>
+    </div>
   </div>
 {% endblock %}

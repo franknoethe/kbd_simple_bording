@@ -131,10 +131,10 @@ EMPLOYEES = [
 ]
 
 STATUS_LABELS = {
-    "approved": "Approved",
-    "in_progress": "In Progress",
-    "pending": "Pending",
-    "review": "In Review",
+    "approved": "Genehmigt",
+    "in_progress": "In Bearbeitung",
+    "pending": "Ausstehend",
+    "review": "In Prüfung",
 }
 
 
@@ -626,17 +626,90 @@ def index():
     except (TypeError, ValueError):
         current_page = 1
 
-    total_employees = len(EMPLOYEES)
+    connection = get_db_connection()
+    candidates = []
+    stats = {"total": 0, "approved": 0, "in_progress": 0, "pending": 0, "avg_progress": 0}
+    if connection:
+        cursor = None
+        try:
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
+            cursor.execute('''
+                SELECT e.id,
+                       CONCAT_WS(' ', e.first_name, e.last_name) AS name,
+                      COALESCE(NULLIF(TRIM(e.department), ''), '') AS department,
+                       COALESCE(l.name, '') AS location,
+                       COALESCE(j.name, '') AS role,
+                       process_cases.start_date,
+                       COALESCE(task_counts.total_tasks, 0) AS total_tasks,
+                       COALESCE(task_counts.open_tasks, 0) AS open_tasks,
+                       COALESCE(task_counts.in_progress_tasks, 0) AS in_progress_tasks,
+                       COALESCE(task_counts.completed_tasks, 0) AS completed_tasks
+                FROM employees e
+                JOIN functions f ON f.id = e.function_id AND LOWER(f.name) = LOWER(%s)
+                LEFT JOIN locations l ON l.id = e.location_id
+                LEFT JOIN jobs j ON j.id = e.job_id
+                LEFT JOIN (
+                    SELECT employee_id, MIN(start_date) AS start_date
+                    FROM process_cases
+                    GROUP BY employee_id
+                ) process_cases ON process_cases.employee_id = e.id
+                LEFT JOIN (
+                    SELECT employee_id,
+                           COUNT(*) AS total_tasks,
+                           SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_tasks,
+                           SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+                           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
+                    FROM tasks
+                    GROUP BY employee_id
+                ) task_counts ON task_counts.employee_id = e.id
+                ORDER BY e.last_name ASC, e.first_name ASC
+            ''', ('Newbie',))
+            for row in cursor.fetchall():
+                total_tasks = int(row.get('total_tasks') or 0)
+                open_tasks = int(row.get('open_tasks') or 0)
+                in_progress_tasks = int(row.get('in_progress_tasks') or 0)
+                completed_tasks = int(row.get('completed_tasks') or 0)
+                if open_tasks > 0:
+                    status = 'pending'
+                elif in_progress_tasks > 0:
+                    status = 'in_progress'
+                else:
+                    status = 'approved'
+                progress = round((completed_tasks / total_tasks) * 100) if total_tasks else 0
+                candidates.append({
+                    'id': row['id'],
+                    'name': row['name'].strip(),
+                    'department': row.get('department') or '',
+                    'role': row.get('role') or '',
+                    'status': status,
+                    'progress': progress,
+                    'start_date': row['start_date'].isoformat() if row.get('start_date') else '',
+                    'location': row.get('location') or '',
+                })
+        finally:
+            if cursor:
+                cursor.close()
+            connection.close()
+
+    total_employees = len(candidates)
+    if total_employees:
+        stats = {
+            "total": total_employees,
+            "approved": sum(1 for item in candidates if item["status"] == "approved"),
+            "in_progress": sum(1 for item in candidates if item["status"] == "in_progress"),
+            "pending": sum(1 for item in candidates if item["status"] == "pending"),
+            "avg_progress": round(sum(item["progress"] for item in candidates) / total_employees, 1),
+        }
     total_pages = max(1, (total_employees + page_size - 1) // page_size)
     current_page = min(current_page, total_pages)
     start_index = (current_page - 1) * page_size
-    page_employees = EMPLOYEES[start_index:start_index + page_size]
+    page_employees = candidates[start_index:start_index + page_size]
 
     return render_template(
         "index.html",
         employees=page_employees,
         status_labels=STATUS_LABELS,
-        stats=compute_stats(),
+        stats=stats,
         current_page=current_page,
         total_pages=total_pages,
         total_employees=total_employees,

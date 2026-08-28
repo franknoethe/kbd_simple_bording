@@ -84,7 +84,9 @@ body {
 }
 
 .nav a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 12px 14px;
   color: #cfcfcf;
   text-decoration: none;
@@ -95,6 +97,12 @@ body {
 .nav a.active,
 .nav a:hover {
   background: rgba(148, 163, 184, 0.12);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
 }
 
 .main-content {
@@ -519,7 +527,7 @@ th.th-action {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #fd8b05;
+  background: var(--kbd-orange-soft);
   color: #000;
   font-weight: 700;
 }
@@ -546,7 +554,7 @@ th.th-action {
 .progress-bar {
   width: 130px;
   height: 8px;
-  background: #e9edf7;
+  background: #f3f3f3;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -686,6 +694,32 @@ th.th-action {
 .status-inactive {
   background: rgba(109, 122, 140, 0.14);
   color: var(--muted);
+}
+
+.status-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.status-btn-red { background: var(--red); }
+.status-btn-yellow { background: var(--kbd-gelb); }
+.status-btn-green { background: var(--kbd-hellgruen); }
+
+.status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-options .status-btn {
+  padding: 12px 16px;
+  font-size: 14px;
 }
 
 .form-message {

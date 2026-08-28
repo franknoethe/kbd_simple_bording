@@ -209,8 +209,16 @@ Die Spalte "THEMA" hinzufügen vor "TITEL" -> tasks.theme
 Letzter Spaltentitel "AKTIONEN"
 Spalte "AKTIONEN" erhält einen Button "Mail" wenn der Wert tasks_email_template_id <> NULL ist.
 Klick auf Button "Mail" wird ein Vorschaufenster wie der Vorschau für die E-Mail-Vorlagen erstellt.
+Status im Dashboard "Meine Aufgaben" soll als Button in den Farben rot -> due_date < heute, gelb -> in_progress, grün -> open. Nach einem Klick auf dem Button öffnet sich ein Poppup mit den Werten Offen, In Bearbeitung, Fertig
+Status im Dashboard "Meine Aufgaben" werden nur tasks gelistet die der employee_id des Logins enstprechen
 
+Dashboard Kanditatenübersicht:
+Gesamte Mitarbeiter = employees.function_id <=> Newbie
+Genehmigt = tasks.emplyee_id -> employees.function_id <=> Newbie & count tasks.status open or in_progress = 0
+In Bearbeitung = tasks.emplyee_id -> employees.function_id <=> Newbie
+Ausstehend = tasks.emplyee_id -> employees.function_id <=> Newbie & count tasks.status open
 
-
-Status soll als Button in den Farben rot -> due_date < heute, gelb -> in_progress, grün -> open. Nach einem Klick auf dem Button öffnet sich ein Poppup mit den Werten Offen, In Bearbeitung, Fertig
+Dashboard Kanditaenübersicht genauso nur mit Daten aus tasks. Department bleibt noch leer.
+Dashboard Kanditatenübersicht Spalte START DATE = process_cases.start_date
+Dashboard Kanditaenübersicht DEPARTMENT = employees.department.
 

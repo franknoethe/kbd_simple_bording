@@ -1,2 +1,0 @@
-ALTER TABLE tasks
-    ADD COLUMN theme VARCHAR(255) NULL AFTER id;
