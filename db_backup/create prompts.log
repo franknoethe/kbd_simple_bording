@@ -9,8 +9,7 @@ die anker werden durch zuerst dem gleichen img url_for('static', filename='icon_
 Mit einem klick auf button ">" extrahiert sich die sidebar wieder und die anker erhalten ihre alten beschriftungen, die images werden ausgeblendet. 
 
 formatiere den code in index.html lesbar
-
-Ust die Sidebar hält ihren Zustand vrkleinert oder vergrößert ganz gleich main-content gewählt wurde.
+Die Sidebar hält ihren Zustand vrkleinert oder vergrößert ganz gleich main-content gewählt wurde bis der Zustand wieder geändert wird
 
 
 **********************************************************

@@ -9,6 +9,11 @@
   </head>
   <body>
     <div class="page-shell">
+      <script>
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+          document.currentScript.parentElement.classList.add('sidebar-collapsed');
+        }
+      </script>
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark"></div>
@@ -81,11 +86,17 @@
       document.addEventListener('DOMContentLoaded', () => {
         const toggleBtn = document.getElementById('sidebar-toggle-btn');
         const pageShell = document.querySelector('.page-shell');
+
         if (toggleBtn && pageShell) {
+          const isCollapsed = pageShell.classList.contains('sidebar-collapsed');
+          toggleBtn.textContent = isCollapsed ? '>' : '<';
+          toggleBtn.setAttribute('aria-label', isCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen');
+
           toggleBtn.addEventListener('click', () => {
-            const isCollapsed = pageShell.classList.toggle('sidebar-collapsed');
-            toggleBtn.textContent = isCollapsed ? '>' : '<';
-            toggleBtn.setAttribute('aria-label', isCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen');
+            const collapsed = pageShell.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', collapsed);
+            toggleBtn.textContent = collapsed ? '>' : '<';
+            toggleBtn.setAttribute('aria-label', collapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen');
           });
         }
       });
