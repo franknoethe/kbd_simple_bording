@@ -12,27 +12,28 @@
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark"></div>
-          <div>
+          <div class="brand-text">
             <strong>KBD</strong>
             <small>Simple Boarding</small>
           </div>
         </div>
 
         <nav class="nav">
-          <a class="{% if request.path == '/' %}active{% endif %}" href="/">Dashboard</a>
+          <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Sidebar einklappen">&lt;</button>
+          <a class="{% if request.path == '/' %}active{% endif %}" href="/" data-label="Dashboard"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Dashboard" alt="Dashboard" /><span class="nav-label">Dashboard</span></a>
             {% if session.user.role|lower == 'admin' %}
-          <a class="{% if request.path == '/roles' %}active{% endif %}" href="/roles">Rollen</a>
-          <a class="{% if request.path == '/process-types' %}active{% endif %}" href="/process-types">Prozesse</a>
-          <a class="{% if request.path == '/functions' %}active{% endif %}" href="/functions">Funktionen</a>
+          <a class="{% if request.path == '/roles' %}active{% endif %}" href="/roles" data-label="Rollen"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Rollen" alt="Rollen" /><span class="nav-label">Rollen</span></a>
+          <a class="{% if request.path == '/process-types' %}active{% endif %}" href="/process-types" data-label="Prozesse"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Prozesse" alt="Prozesse" /><span class="nav-label">Prozesse</span></a>
+          <a class="{% if request.path == '/functions' %}active{% endif %}" href="/functions" data-label="Funktionen"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Funktionen" alt="Funktionen" /><span class="nav-label">Funktionen</span></a>
             {% endif %}
           {% if session.user.role|lower in ['admin', 'manager'] %}
-          <a class="{% if request.path == '/locations' %}active{% endif %}" href="/locations">Standorte</a>
-          <a class="{% if request.path == '/jobs' %}active{% endif %}" href="/jobs">Jobs</a>
-          <a class="{% if request.path == '/employees' %}active{% endif %}" href="/employees">Mitarbeiter</a>
-          <a class="{% if request.path == '/email-templates' %}active{% endif %}" href="/email-templates">E-Mail-Vorlagen</a>
-          <a class="{% if request.path == '/templates' %}active{% endif %}" href="/templates">Prozessvorlagen</a>
-          <a class="{% if request.path == '/template-tasks' %}active{% endif %}" href="/template-tasks">Prozessaufgaben</a>
-          <a class="{% if request.path == '/tasks' %}active{% endif %}" href="/tasks">Aufgaben</a>
+          <a class="{% if request.path == '/locations' %}active{% endif %}" href="/locations" data-label="Standorte"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Standorte" alt="Standorte" /><span class="nav-label">Standorte</span></a>
+          <a class="{% if request.path == '/jobs' %}active{% endif %}" href="/jobs" data-label="Jobs"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Jobs" alt="Jobs" /><span class="nav-label">Jobs</span></a>
+          <a class="{% if request.path == '/employees' %}active{% endif %}" href="/employees" data-label="Mitarbeiter"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Mitarbeiter" alt="Mitarbeiter" /><span class="nav-label">Mitarbeiter</span></a>
+          <a class="{% if request.path == '/email-templates' %}active{% endif %}" href="/email-templates" data-label="E-Mail-Vorlagen"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="E-Mail-Vorlagen" alt="E-Mail-Vorlagen" /><span class="nav-label">E-Mail-Vorlagen</span></a>
+          <a class="{% if request.path == '/templates' %}active{% endif %}" href="/templates" data-label="Prozessvorlagen"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Prozessvorlagen" alt="Prozessvorlagen" /><span class="nav-label">Prozessvorlagen</span></a>
+          <a class="{% if request.path == '/template-tasks' %}active{% endif %}" href="/template-tasks" data-label="Prozessaufgaben"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Prozessaufgaben" alt="Prozessaufgaben" /><span class="nav-label">Prozessaufgaben</span></a>
+          <a class="{% if request.path == '/tasks' %}active{% endif %}" href="/tasks" data-label="Aufgaben"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" title="Aufgaben" alt="Aufgaben" /><span class="nav-label">Aufgaben</span></a>
           {% endif %}
         </nav>
       </aside>
@@ -76,6 +77,18 @@
           document.getElementById('global-delete-close').onclick = () => finish(false);
         });
       };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const pageShell = document.querySelector('.page-shell');
+        if (toggleBtn && pageShell) {
+          toggleBtn.addEventListener('click', () => {
+            const isCollapsed = pageShell.classList.toggle('sidebar-collapsed');
+            toggleBtn.textContent = isCollapsed ? '>' : '<';
+            toggleBtn.setAttribute('aria-label', isCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen');
+          });
+        }
+      });
     </script>
   </body>
 </html>
