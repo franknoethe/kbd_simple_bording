@@ -21,7 +21,7 @@
         <nav class="nav">
           <a class="{% if request.path == '/' %}active{% endif %}" href="/">Dashboard</a>
             {% if session.user.role|lower == 'admin' %}
-          <a class="{% if request.path == '/roles' %}active{% endif %}" href="/roles"><img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" alt="" aria-hidden="true" />Rollen</a>
+          <a class="{% if request.path == '/roles' %}active{% endif %}" href="/roles">Rollen</a>
           <a class="{% if request.path == '/process-types' %}active{% endif %}" href="/process-types">Prozesse</a>
           <a class="{% if request.path == '/functions' %}active{% endif %}" href="/functions">Funktionen</a>
             {% endif %}

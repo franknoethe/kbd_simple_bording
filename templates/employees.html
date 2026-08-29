@@ -19,7 +19,7 @@
     <p id="employee-page-message" class="form-message" role="status"></p>
 
     <div class="table-wrap">
-      <table>
+      <table id="employees-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -35,35 +35,57 @@
               </span></span>
             </th>
             <th>E-Mail</th>
-            <th>Abteilung</th>
-            <th>Benutzername</th>
+            <th>
+              <span class="sortable-heading">Abteilung <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="asc" aria-label="Abteilung aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="department" data-sort-direction="desc" aria-label="Abteilung absteigend sortieren" title="DESC">↓</button>
+              </span></span>
+            </th>
+            <th class="col-username">
+              <span class="sortable-heading">
+                <span class="col-username-label">Benutzername</span>
+                <button class="sort-btn" id="toggle-username-col-btn" type="button" aria-label="Spalte verkleinern">&lt;</button>
+              </span>
+            </th>
             <th>
               <div class="employee-filter">
                 <input id="employee-filter-location" type="search" placeholder="Standort filtern" autocomplete="off" aria-label="Standort filtern" data-filter-field="location_id">
                 <div id="employee-suggestions-location" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>
-              <span class="sortable-heading">Standort</span>
+              <span class="sortable-heading">Standort <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="asc" aria-label="Standort aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="desc" aria-label="Standort absteigend sortieren" title="DESC">↓</button>
+              </span></span>
             </th>
             <th>
               <div class="employee-filter">
                 <input id="employee-filter-job" type="search" placeholder="Job filtern" autocomplete="off" aria-label="Job filtern" data-filter-field="job_id">
                 <div id="employee-suggestions-job" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>  
-              <span class="sortable-heading">Job</span>
+              <span class="sortable-heading">Job <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="asc" aria-label="Job aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="desc" aria-label="Job absteigend sortieren" title="DESC">↓</button>
+              </span></span>
             </th>
             <th>
               <div class="employee-filter">
                 <input id="employee-filter-role" type="search" placeholder="Rolle filtern" autocomplete="off" aria-label="Rolle filtern" data-filter-field="role_id">
                 <div id="employee-suggestions-role" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>
-              <span class="sortable-heading">System-Rolle</span>
+              <span class="sortable-heading">Rolle <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="role_id" data-sort-direction="asc" aria-label="Rolle aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="role_id" data-sort-direction="desc" aria-label="Rolle absteigend sortieren" title="DESC">↓</button>
+              </span></span>
             </th>
             <th>
               <div class="employee-filter">
                 <input id="employee-filter-function" type="search" placeholder="Funktion filtern" autocomplete="off" aria-label="Funktion filtern" data-filter-field="function_id">
                 <div id="employee-suggestions-function" class="employee-suggestions is-hidden" role="listbox"></div>
               </div>
-              <span class="sortable-heading">Prozess-Funktion</span>
+              <span class="sortable-heading">Funktion <span class="sort-buttons">
+                <button class="sort-btn" type="button" data-sort-key="function_id" data-sort-direction="asc" aria-label="Funktion aufsteigend sortieren" title="ASC">↑</button>
+                <button class="sort-btn" type="button" data-sort-key="function_id" data-sort-direction="desc" aria-label="Funktion absteigend sortieren" title="DESC">↓</button>
+              </span></span>
             </th>
             <th>Aktionen</th>
           </tr>
@@ -179,12 +201,15 @@
     const employeePageSize = 800;
     let employeeSortKey = null;
     let employeeSortDirection = 'asc';
+    let isUsernameCollapsed = false;
 
     // Load employees on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadEmployeeOptions();
       loadEmployees();
       document.getElementById('add-employee-btn').addEventListener('click', openNewEmployeeModal);
+      const toggleUsernameBtn = document.getElementById('toggle-username-col-btn');
+      if (toggleUsernameBtn) toggleUsernameBtn.addEventListener('click', toggleUsernameColumn);
       document.getElementById('location-id').addEventListener('change', handleEmployeeLocationChange);
       document.getElementById('employee-prev-page').addEventListener('click', () => changeEmployeePage(-1));
       document.getElementById('employee-next-page').addEventListener('click', () => changeEmployeePage(1));
@@ -292,10 +317,18 @@
         return;
       }
 
+      const getEmployeeSortValue = (employee, key) => {
+        if (!key) return '';
+        if (employeeOptionMaps[key]) {
+          return String(employeeOptionMaps[key].get(String(employee[key])) || '');
+        }
+        return String(employee[key] || '');
+      };
+
       const sortedEmployees = [...employees].sort((first, second) => {
         if (!employeeSortKey) return 0;
-        const firstValue = String(first[employeeSortKey] || '').toLocaleLowerCase('de');
-        const secondValue = String(second[employeeSortKey] || '').toLocaleLowerCase('de');
+        const firstValue = getEmployeeSortValue(first, employeeSortKey).toLocaleLowerCase('de');
+        const secondValue = getEmployeeSortValue(second, employeeSortKey).toLocaleLowerCase('de');
         const comparison = firstValue.localeCompare(secondValue, 'de');
         return employeeSortDirection === 'asc' ? comparison : -comparison;
       });
@@ -316,15 +349,16 @@
           <td>${emp.last_name}</td>
           <td>${emp.email || '-'}</td>
           <td>${emp.department || '-'}</td>
-          <td>${emp.username || '-'}</td>
+          <td class="col-username">${emp.username || '-'}</td>
           <td>${escapeHtml(employeeOptionMaps.location_id.get(String(emp.location_id)) || '-')}</td>
           <td>${escapeHtml(employeeOptionMaps.job_id.get(String(emp.job_id)) || '-')}</td>
           <td>${escapeHtml(employeeOptionMaps.role_id.get(String(emp.role_id)) || '-')}</td>
           <td>${escapeHtml(employeeOptionMaps.function_id.get(String(emp.function_id)) || '-')}</td>
           <td>
             <div class="action-btns">
-              <button class="edit-btn" onclick="openEditModal(${emp.id})">Edit</button>
-              <button class="delete-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
+              <button class="primary-btn" onclick="openNewEmployeeModalFromRow(${emp.id})">+</button>
+              <button class="edit-btn" onclick="openEditModal(${emp.id})">E</button>
+              <button class="delete-btn" onclick="deleteEmployee(${emp.id})">-</button>
             </div>
           </td>
         </tr>
@@ -426,12 +460,43 @@
       displayEmployees();
     }
 
+    function toggleUsernameColumn() {
+      isUsernameCollapsed = !isUsernameCollapsed;
+      const table = document.getElementById('employees-table');
+      const button = document.getElementById('toggle-username-col-btn');
+      if (table) table.classList.toggle('username-collapsed', isUsernameCollapsed);
+      if (button) {
+        button.textContent = isUsernameCollapsed ? '>' : '<';
+        button.setAttribute('aria-label', isUsernameCollapsed ? 'Spalte ausklappen' : 'Spalte einklappen');
+      }
+    }
+
     function openNewEmployeeModal() {
       currentEditingId = null;
       document.getElementById('modal-title').textContent = 'Neuer Mitarbeiter';
       document.getElementById('employee-form').reset();
       document.getElementById('employee-id').value = '';
       updateEmployeeJobOptions('');
+      document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    function openNewEmployeeModalFromRow(employeeId) {
+      const employee = allEmployees.find(e => e.id === employeeId);
+      if (!employee) return;
+      currentEditingId = null;
+      document.getElementById('modal-title').textContent = 'Neuer Mitarbeiter';
+      document.getElementById('employee-form').reset();
+      document.getElementById('employee-id').value = '';
+      document.getElementById('first-name').value = '';
+      document.getElementById('last-name').value = '';
+      document.getElementById('email').value = '@kolping-bildung-deutschland.de';
+      document.getElementById('department').value = employee.department || '';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('location-id').value = employee.location_id || '';
+      updateEmployeeJobOptions(employee.location_id, employee.job_id);
+      document.getElementById('role-id').value = employee.role_id || '';
+      document.getElementById('function-id').value = employee.function_id || '';
       document.getElementById('modal-overlay').style.display = 'flex';
     }
 

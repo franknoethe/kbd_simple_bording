@@ -20,6 +20,7 @@
   --kbd-smaragd:rgb(29, 115, 138);
   --kbd-petrol: rgb(66,159,161);
   --kbd-dunkelblau: rgb(40,93,167);
+  --kbd-dunkelblau-soft: rgba(40,93,167,0.2);
   --kbd-hellblau: rgb(68,156,219);
   --kbd-violett: rgb(116,5,111);
   --kbd-purpur: rgb(155,6,135);
@@ -135,8 +136,8 @@ h1, h2 {
 .primary-btn {
   border: none;
   border-radius: 999px;
-  background: var(--primary);
-  color: #fff;
+  background: var(--kbd-dunkelblau-soft);
+  color: var(--kbd-dunkelblau);
   font-size: 12px;
   padding: 6px 10px;
   font-weight: 700;
@@ -305,6 +306,31 @@ th.th-action {
   border-color: var(--kbd-orange);
   background: var(--kbd-orange-soft);
   color: var(--kbd-orange);
+}
+
+.col-username {
+  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+.username-collapsed .col-username {
+  width: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.username-collapsed .col-username-label {
+  display: none !important;
+}
+
+.username-collapsed td.col-username {
+  background-color: var(--bg) !important;
+  color: transparent !important;
+  font-size: 0 !important;
 }
 
 .location-filter {

@@ -3,6 +3,12 @@
 *********************************************************
 Die class "maincontent" und "sidebar" sollen getrennt scrollbar sein.
 
+Die sidebar soll einen kleinen Button "<" an erster Stelle im nav haben.
+Mit einem Klick verkleinert sich die sidber auf 150px breite, das div mit den schriften im Brand wird ausgeblendet, die Buttenschrift wird ">",
+die anker werden durch zuerst dem gleichen img url_for('static', filename='icon_test.svg') erstetzt, mit eienem hover wird die Buttonbezeichnungen im bubble dargestellt.
+Mite einem klick auf button ">" extrahiert sich die sidebar wieder und die anker erhalten ihre alten beschriftungen, die images werden ausgeblendet. 
+.
+<!--<img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" alt="" aria-hidden="true" />-->
 
 **********************************************************
  //* CRUD for locations
@@ -36,6 +42,15 @@ Erweitere mir die Tabelle mitarbeiterliste mit den Spalten Standort -> location_
 Schreibe mir einen Datensatz-Filter für die Mtarbeiterliste. Es erscheint in den Spalten Nachname, Standort, Job, Rolle und Funktion unter der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Mitarbeiterliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
 
 Im Fall von create und update werden in den Modals Neuer Mitarbeiter und Mitarbeiter bearbeiten nach der Wahl in der Combobox Standort die Daten der Combobox Job auf die der standort_id angezeigt.  
+
+Spalte "AKTIONEN" in Mitarbeiterliste erhält einen Button "Neuer Mitarbeiter" gemaß den Funktionen "add-employee-btn"
+Nach Klick öffnet sich modal employee-form unterschied: Eintrag E-Mail = @kolping-bildung-deutschland.de, Abteilung, Standort, Job, Rolle und Funktion  = Werte aus Zeile
+Spalte "Benutzername" in Mitarbeiterliste erhaält einen kleinen Button "<". Mit einem Klick verkleinert sich die Spalte auf 10px, die Zeileninhalte werden nicht mehr angezeigt, und die Buttonbeschriftung ändert sich auf ">".
+Mit einem KLickch auf dem Button ">" extrahiert sich die Spalte, erhält wieder die Beschriftung und die Buttonbeschriftung ändert sich auf ">"
+im verkleinerten Zustand erhält der Hintergrund der Spalte in den Zeilen die Farbe var(--bg)
+
+In der Tabelle Mitarbeiterliste möchte ich die Spalten ABTEILUNG, STANDORT, JOB, ROLLE und FUNKTION wie bei NACHNAME nach einem klick hinter den Spaltennamen auf einem kleinen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
+
 
 **********************************************************
 Nach dem erfolgreichen speichern oder löschen in der Mitarbeiterliste möchte ich kein java-meldefenster
@@ -221,4 +236,6 @@ Ausstehend = tasks.emplyee_id -> employees.function_id <=> Newbie & count tasks.
 Dashboard Kanditaenübersicht genauso nur mit Daten aus tasks. Department bleibt noch leer.
 Dashboard Kanditatenübersicht Spalte START DATE = process_cases.start_date
 Dashboard Kanditaenübersicht DEPARTMENT = employees.department.
+
+setze icon_test vor dem Button Rollen
 
