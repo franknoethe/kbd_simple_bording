@@ -1,112 +1,491 @@
 {% extends 'base.html' %}
+
 {% block title %}Aufgaben{% endblock %}
+
 {% block content %}
 <header class="topbar">
-  <div><p class="eyebrow">Management</p><h1>Aufgaben</h1></div>
+  <div>
+    <p class="eyebrow">Management</p>
+    <h1>Aufgaben</h1>
+  </div>
   <button class="primary-btn" id="assign-task-btn" type="button">Aufgaben zuweisen</button>
 </header>
+
 <section class="panel">
-  <div class="panel-header"><h2>Aufgabenliste</h2><span id="task-count">0 Aufgaben</span></div>
+  <div class="panel-header">
+    <h2>Aufgabenliste</h2>
+    <span id="task-count">0 Aufgaben</span>
+  </div>
   <div id="task-message" class="form-message"></div>
   <div class="table-wrap">
     <table>
-      <thead><tr>
-        <th><div class="task-filter"><input data-field="theme" placeholder="Thema suchen" autocomplete="off"><div class="task-suggestions is-hidden"></div></div><span class="sortable-heading">THEMA <button class="sort-btn" data-sort="theme" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="theme" data-direction="desc" type="button">↓</button></span></th>
-        <th><span class="sortable-heading">ID <button class="sort-btn" data-sort="id" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="id" data-direction="desc" type="button">↓</button></span></th>
-        <th><div class="task-filter"><input data-field="employee" placeholder="Mitarbeiter suchen" autocomplete="off"><div class="task-suggestions is-hidden"></div></div><span class="sortable-heading">Mitarbeiter <button class="sort-btn" data-sort="employee" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="employee" data-direction="desc" type="button">↓</button></span></th>
-        <th><div class="task-filter"><input data-field="template" placeholder="Vorlage suchen" autocomplete="off"><div class="task-suggestions is-hidden"></div></div>Vorlage</th>
-        <th>Titel</th><th>Beschreibung</th>
-        <th><div class="task-filter"><input data-field="due_date" placeholder="Fällig suchen" autocomplete="off"><div class="task-suggestions is-hidden"></div></div><span class="sortable-heading">Fällig <button class="sort-btn" data-sort="due_date" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="due_date" data-direction="desc" type="button">↓</button></span></th>
-        <th><span class="sortable-heading">Status <button class="sort-btn" data-sort="status" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="status" data-direction="desc" type="button">↓</button></span></th>
-        <th><div class="task-filter"><input data-field="created_at" placeholder="Erstellt suchen" autocomplete="off"><div class="task-suggestions is-hidden"></div></div><span class="sortable-heading">Erstellt am <button class="sort-btn" data-sort="created_at" data-direction="asc" type="button">↑</button><button class="sort-btn" data-sort="created_at" data-direction="desc" type="button">↓</button></span></th><th>Aktionen</th>
-      </tr></thead>
-      <tbody id="tasks-tbody"><tr><td colspan="10" class="table-message">Lädt...</td></tr></tbody>
+      <thead>
+        <tr>
+          <th>
+            <div class="task-filter">
+              <input data-field="theme" placeholder="Thema suchen" autocomplete="off">
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              THEMA
+              <button class="sort-btn" data-sort="theme" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="theme" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <span class="sortable-heading">
+              ID
+              <button class="sort-btn" data-sort="id" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="id" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <div class="task-filter">
+              <input data-field="employee" placeholder="Mitarbeiter suchen" autocomplete="off">
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              Mitarbeiter
+              <button class="sort-btn" data-sort="employee" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="employee" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <div class="task-filter">
+              <input data-field="template" placeholder="Vorlage suchen" autocomplete="off">
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            Vorlage
+          </th>
+          <th>Titel</th>
+          <th>Beschreibung</th>
+          <th>
+            <div class="task-filter">
+              <input data-field="due_date" placeholder="Fällig suchen" autocomplete="off">
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              Fällig
+              <button class="sort-btn" data-sort="due_date" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="due_date" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <span class="sortable-heading">
+              Status
+              <button class="sort-btn" data-sort="status" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="status" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <div class="task-filter">
+              <input data-field="created_at" placeholder="Erstellt suchen" autocomplete="off">
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              Erstellt am
+              <button class="sort-btn" data-sort="created_at" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="created_at" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th class="th-action">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="tasks-tbody">
+        <tr>
+          <td colspan="10" class="table-message">Lädt...</td>
+        </tr>
+      </tbody>
     </table>
   </div>
-  <div id="task-pagination" class="table-pagination is-hidden" hidden><button class="pagination-btn" id="task-prev" type="button">←</button><span id="task-page-info" class="pagination-info"></span><button class="pagination-btn" id="task-next" type="button">→</button></div>
+  <div id="task-pagination" class="table-pagination is-hidden" hidden>
+    <button class="pagination-btn" id="task-prev" type="button">←</button>
+    <span id="task-page-info" class="pagination-info"></span>
+    <button class="pagination-btn" id="task-next" type="button">→</button>
+  </div>
 </section>
 
 <div id="task-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
   <div class="modal">
-    <div class="modal-header"><h2 id="task-modal-title">Aufgaben zuweisen</h2><button class="close-btn" id="task-modal-close" type="button" aria-label="Dialog schließen">&times;</button></div>
+    <div class="modal-header">
+      <h2 id="task-modal-title">Aufgaben zuweisen</h2>
+      <button class="close-btn" id="task-modal-close" type="button" aria-label="Dialog schließen">&times;</button>
+    </div>
     <form id="task-form">
-      <label class="task-mode-switch"><span>Aufgaben aus Vorlage</span><input id="task-mode-toggle" type="checkbox"><span class="task-mode-slider"></span></label>
+      <label class="task-mode-switch">
+        <span>Aufgaben aus Vorlage</span>
+        <input id="task-mode-toggle" type="checkbox">
+        <span class="task-mode-slider"></span>
+      </label>
+
       <div id="task-add-via-template" class="task-assignment-container is-hidden">
-        <div class="form-group"><label for="task-employee">Mitarbeiter</label><select id="task-employee"></select></div>
-        <div class="form-group"><label for="task-entry-date">Eintrittsdatum</label><input id="task-entry-date" type="date"></div>
-        <div class="form-group"><label for="task-template">Vorlage</label><select id="task-template"></select></div>
+        <div class="form-group">
+          <label for="task-employee">Mitarbeiter</label>
+          <select id="task-employee"></select>
+        </div>
+        <div class="form-group">
+          <label for="task-entry-date">Eintrittsdatum</label>
+          <input id="task-entry-date" type="date">
+        </div>
+        <div class="form-group">
+          <label for="task-template">Vorlage</label>
+          <select id="task-template"></select>
+        </div>
       </div>
+
       <div id="task-add-singlejob" class="task-assignment-container">
-        <div class="form-group"><label for="single-task-employee">Aufgabe für</label><select id="single-task-employee" required></select></div>
-        <div class="form-group"><label for="single-task-theme">Thema</label><input id="single-task-theme" type="text"></div>
-        <div class="form-group"><label for="single-task-due-date">Fällig</label><input id="single-task-due-date" type="date"></div>
-        <div class="form-group"><label for="single-task-title">Titel</label><input id="single-task-title" type="text"></div>
-        <div class="form-group"><label for="single-task-description">Beschreibung</label><textarea id="single-task-description" rows="4"></textarea></div>
-        <div class="form-group"><label for="single-task-email">Email</label><select id="single-task-email"><option value="">Keine</option></select></div>
+        <div class="form-group">
+          <label for="single-task-employee">Aufgabe für</label>
+          <select id="single-task-employee" required></select>
+        </div>
+        <div class="form-group">
+          <label for="single-task-theme">Thema</label>
+          <input id="single-task-theme" type="text">
+        </div>
+        <div class="form-group">
+          <label for="single-task-due-date">Fällig</label>
+          <input id="single-task-due-date" type="date">
+        </div>
+        <div class="form-group">
+          <label for="single-task-title">Titel</label>
+          <input id="single-task-title" type="text">
+        </div>
+        <div class="form-group">
+          <label for="single-task-description">Beschreibung</label>
+          <textarea id="single-task-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="single-task-email">Email</label>
+          <select id="single-task-email">
+            <option value="">Keine</option>
+          </select>
+        </div>
       </div>
+
       <p id="task-form-message" class="form-message"></p>
-      <div class="modal-actions"><button class="primary-btn" type="submit">Zuweisen</button><button class="secondary-btn" id="task-form-cancel" type="button">Abbrechen</button></div>
+      <div class="modal-actions">
+        <button class="primary-btn" type="submit">Zuweisen</button>
+        <button class="secondary-btn" id="task-form-cancel" type="button">Abbrechen</button>
+      </div>
     </form>
   </div>
 </div>
 
 <div id="edit-task-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="edit-task-title">
-  <div class="modal"><div class="modal-header"><h2 id="edit-task-title">Aufgabe bearbeiten</h2><button class="close-btn" id="edit-task-close" type="button">&times;</button></div>
-    <form id="edit-task-form"><input type="hidden" id="edit-task-id"><div class="form-group"><label for="edit-task-name">Titel</label><input id="edit-task-name" required></div><div class="form-group"><label for="edit-task-description">Beschreibung</label><textarea id="edit-task-description" rows="4"></textarea></div><div class="form-group"><label for="edit-task-due-date">Fällig</label><input id="edit-task-due-date" type="date" required></div><div class="form-group"><label for="edit-task-status">Status</label><select id="edit-task-status"></select></div><p id="edit-task-message" class="form-message"></p><div class="modal-actions"><button class="primary-btn" type="submit">Speichern</button><button class="secondary-btn" id="edit-task-cancel" type="button">Abbrechen</button></div></form>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="edit-task-title">Aufgabe bearbeiten</h2>
+      <button class="close-btn" id="edit-task-close" type="button">&times;</button>
+    </div>
+    <form id="edit-task-form">
+      <input type="hidden" id="edit-task-id">
+      <div class="form-group">
+        <label for="edit-task-name">Titel</label>
+        <input id="edit-task-name" required>
+      </div>
+      <div class="form-group">
+        <label for="edit-task-description">Beschreibung</label>
+        <textarea id="edit-task-description" rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-task-due-date">Fällig</label>
+        <input id="edit-task-due-date" type="date" required>
+      </div>
+      <div class="form-group">
+        <label for="edit-task-status">Status</label>
+        <select id="edit-task-status"></select>
+      </div>
+      <p id="edit-task-message" class="form-message"></p>
+      <div class="modal-actions">
+        <button class="primary-btn" type="submit">Speichern</button>
+        <button class="secondary-btn" id="edit-task-cancel" type="button">Abbrechen</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <div id="task-mail-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="task-mail-title">
-  <div class="modal preview-modal"><div class="modal-header"><h2 id="task-mail-title">E-Mail-Vorschau</h2><button class="close-btn" id="task-mail-close" type="button" aria-label="Dialog schließen">&times;</button></div><iframe id="task-mail-html" title="E-Mail HTML-Vorschau" sandbox=""></iframe><pre id="task-mail-text" class="text-preview"></pre></div>
+  <div class="modal preview-modal">
+    <div class="modal-header">
+      <h2 id="task-mail-title">E-Mail-Vorschau</h2>
+      <button class="close-btn" id="task-mail-close" type="button" aria-label="Dialog schließen">&times;</button>
+    </div>
+    <iframe id="task-mail-html" title="E-Mail HTML-Vorschau" sandbox=""></iframe>
+    <pre id="task-mail-text" class="text-preview"></pre>
+  </div>
 </div>
 
 <script>
   const canManageTasks = {{ 'true' if session.user.role|lower in ['admin', 'manager'] else 'false' }};
   const statuses = { open: 'Offen', in_progress: 'In Bearbeitung', completed: 'Erledigt' };
   const today = new Date().toISOString().slice(0, 10);
-  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[char]));
+
   const taskModal = document.getElementById('task-modal');
   const taskMessage = document.getElementById('task-message');
-  function showTaskMessage(message, target = taskMessage) { target.textContent = message || ''; target.classList.toggle('is-visible', Boolean(message)); }
-  async function loadOptions() {
-    const response = await fetch('/api/task-options'); const data = await response.json();
-    if (!data.success) throw new Error(data.message);
-    document.getElementById('task-employee').innerHTML = data.employees.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
-    document.getElementById('task-template').innerHTML = data.templates.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
-    document.getElementById('single-task-employee').innerHTML = (data.all_employees || data.employees).map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
-    document.getElementById('single-task-email').innerHTML = '<option value="">Keine</option>' + (data.email_templates || []).map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+
+  function showTaskMessage(message, target = taskMessage) {
+    target.textContent = message || '';
+    target.classList.toggle('is-visible', Boolean(message));
   }
-  let taskPage = 1; let taskTotalPages = 1; let taskSort = 'due_date'; let taskDirection = 'asc';
+
+  async function loadOptions() {
+    const response = await fetch('/api/task-options');
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+
+    document.getElementById('task-employee').innerHTML = data.employees
+      .map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
+      .join('');
+    document.getElementById('task-template').innerHTML = data.templates
+      .map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
+      .join('');
+    document.getElementById('single-task-employee').innerHTML = (data.all_employees || data.employees)
+      .map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
+      .join('');
+    document.getElementById('single-task-email').innerHTML = '<option value="">Keine</option>' + (data.email_templates || [])
+      .map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
+      .join('');
+  }
+
+  let taskPage = 1;
+  let taskTotalPages = 1;
+  let taskSort = 'due_date';
+  let taskDirection = 'asc';
   const taskFilters = { theme: '', employee: '', template: '', due_date: '', created_at: '' };
+
   document.getElementById('task-page-info').textContent = '';
-  function renderTasks(taskRows, total) { document.getElementById('task-count').textContent = `${total} Aufgaben`; document.getElementById('tasks-tbody').innerHTML = taskRows.length ? taskRows.map(task => `<tr><td>${escapeHtml(task.theme || '')}</td><td>${task.id}</td><td>${escapeHtml(task.employee_name)}</td><td>${escapeHtml(task.template_task_title)}</td><td>${escapeHtml(task.title)}</td><td>${escapeHtml(task.description)}</td><td>${escapeHtml(task.due_date || '')}</td><td>${escapeHtml(statuses[task.status] || task.status)}</td><td>${escapeHtml(task.created_at || '')}</td><td class="action-btns"><button class="secondary-btn task-edit" data-id="${task.id}" type="button">Bearbeiten</button><button class="delete-btn task-delete" data-id="${task.id}" type="button">Löschen</button>${task.email_template_id !== null && task.email_template_id !== undefined ? `<button class="preview-btn task-mail" data-id="${task.id}" type="button">Mail</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="10" class="table-message">Keine Aufgaben vorhanden.</td></tr>'; document.querySelectorAll('.task-edit').forEach(button => button.addEventListener('click', () => openEditTask(taskRows.find(task => String(task.id) === button.dataset.id)))); document.querySelectorAll('.task-delete').forEach(button => button.addEventListener('click', () => deleteTask(button.dataset.id))); document.querySelectorAll('.task-mail').forEach(button => button.addEventListener('click', () => openTaskMail(button.dataset.id))); }
-  async function loadTasks() { const params = new URLSearchParams({ page: taskPage, sort: taskSort, direction: taskDirection }); Object.entries(taskFilters).forEach(([key, value]) => { if (value) params.set(key, value); }); const response = await fetch(`/api/tasks?${params}`); const data = await response.json(); if (!data.success) throw new Error(data.message); const total = Number(data.total) || 0; taskPage = Number(data.page) || 1; taskTotalPages = Number(data.total_pages) || 1; renderTasks(data.tasks || [], total); const pagination = document.getElementById('task-pagination'); const showPagination = total > 800; pagination.hidden = !showPagination; pagination.classList.toggle('is-hidden', !showPagination); document.getElementById('task-page-info').textContent = showPagination ? `Seite ${taskPage} von ${taskTotalPages}` : ''; document.getElementById('task-prev').disabled = !showPagination || taskPage <= 1; document.getElementById('task-next').disabled = !showPagination || taskPage >= taskTotalPages; }
-  function openEditTask(task) { if (!task) return; document.getElementById('edit-task-id').value = task.id; document.getElementById('edit-task-name').value = task.title || ''; document.getElementById('edit-task-description').value = task.description || ''; document.getElementById('edit-task-due-date').value = task.due_date || ''; document.getElementById('edit-task-status').innerHTML = Object.entries(statuses).map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`).join(''); document.getElementById('edit-task-modal').classList.remove('is-hidden'); }
-  async function saveTask(event) { event.preventDefault(); const id = document.getElementById('edit-task-id').value; const response = await fetch(`/api/tasks/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: document.getElementById('edit-task-name').value, description: document.getElementById('edit-task-description').value, due_date: document.getElementById('edit-task-due-date').value, status: document.getElementById('edit-task-status').value}) }); const data = await response.json(); document.getElementById('edit-task-message').textContent = data.success ? 'Aufgabe gespeichert.' : data.message; if (data.success) { document.getElementById('edit-task-modal').classList.add('is-hidden'); loadTasks(); } }
-  async function deleteTask(id) { if (!await window.showDeleteConfirm('Diese Aufgabe wirklich löschen?')) return; const response = await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); const data = await response.json(); if (!response.ok || !data.success) { showTaskMessage(data.message || 'Löschen fehlgeschlagen.'); return; } showTaskMessage('Aufgabe erfolgreich gelöscht.'); loadTasks(); }
-  async function loadSuggestions(input) { const value = input.value.trim(); const container = input.nextElementSibling; if (value.length < 3) { taskFilters[input.dataset.field] = ''; container.classList.add('is-hidden'); taskPage = 1; loadTasks(); return; } const response = await fetch(`/api/tasks/suggestions?field=${input.dataset.field}&q=${encodeURIComponent(value)}`); const data = await response.json(); container.innerHTML = (data.suggestions || []).map(item => `<button type="button" class="task-suggestion" data-value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</button>`).join('') || '<span class="task-suggestion-empty">Keine Treffer</span>'; container.classList.remove('is-hidden'); container.querySelectorAll('[data-value]').forEach(button => button.addEventListener('click', () => { input.value = button.textContent; taskFilters[input.dataset.field] = button.dataset.value; container.classList.add('is-hidden'); taskPage = 1; loadTasks(); })); }
-  async function openTaskMail(taskId) { const response = await fetch(`/api/tasks/${taskId}/email-preview`); const data = await response.json(); if (!response.ok || !data.success) { showTaskMessage(data.message || 'E-Mail-Vorschau konnte nicht geladen werden.'); return; } const template = data.email_template; document.getElementById('task-mail-title').textContent = `E-Mail-Vorschau: ${template.subject || template.task_title || ''}`; document.getElementById('task-mail-html').srcdoc = template.body_html || ''; document.getElementById('task-mail-text').textContent = template.body_text || ''; document.getElementById('task-mail-modal').classList.remove('is-hidden'); }
-  document.getElementById('assign-task-btn').addEventListener('click', () => { taskModal.classList.remove('is-hidden'); });
+
+  function renderTasks(taskRows, total) {
+    document.getElementById('task-count').textContent = `${total} Aufgaben`;
+    document.getElementById('tasks-tbody').innerHTML = taskRows.length ? taskRows.map(task => `
+      <tr>
+        <td>${escapeHtml(task.theme || '')}</td>
+        <td>${task.id}</td>
+        <td>${escapeHtml(task.employee_name)}</td>
+        <td>${escapeHtml(task.template_task_title)}</td>
+        <td>${escapeHtml(task.title)}</td>
+        <td>${escapeHtml(task.description)}</td>
+        <td>${escapeHtml(task.due_date || '')}</td>
+        <td>${escapeHtml(statuses[task.status] || task.status)}</td>
+        <td>${escapeHtml(task.created_at || '')}</td>
+        <td class="action-btns">
+          <button class="secondary-btn task-edit" data-id="${task.id}" type="button" title="Bearbeiten">E</button>
+          <button class="delete-btn task-delete" data-id="${task.id}" type="button" title="Löschen">L</button>
+          ${task.email_template_id !== null && task.email_template_id !== undefined ? `<button class="preview-btn task-mail" data-id="${task.id}" type="button" title="Mail">&#9678;</button>` : ''}
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="10" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+
+    document.querySelectorAll('.task-edit').forEach(button => {
+      button.addEventListener('click', () => openEditTask(taskRows.find(task => String(task.id) === button.dataset.id)));
+    });
+    document.querySelectorAll('.task-delete').forEach(button => {
+      button.addEventListener('click', () => deleteTask(button.dataset.id));
+    });
+    document.querySelectorAll('.task-mail').forEach(button => {
+      button.addEventListener('click', () => openTaskMail(button.dataset.id));
+    });
+  }
+
+  async function loadTasks() {
+    const params = new URLSearchParams({ page: taskPage, sort: taskSort, direction: taskDirection });
+    Object.entries(taskFilters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+
+    const response = await fetch(`/api/tasks?${params}`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+
+    const total = Number(data.total) || 0;
+    taskPage = Number(data.page) || 1;
+    taskTotalPages = Number(data.total_pages) || 1;
+
+    renderTasks(data.tasks || [], total);
+
+    const pagination = document.getElementById('task-pagination');
+    const showPagination = total > 800;
+    pagination.hidden = !showPagination;
+    pagination.classList.toggle('is-hidden', !showPagination);
+
+    document.getElementById('task-page-info').textContent = showPagination ? `Seite ${taskPage} von ${taskTotalPages}` : '';
+    document.getElementById('task-prev').disabled = !showPagination || taskPage <= 1;
+    document.getElementById('task-next').disabled = !showPagination || taskPage >= taskTotalPages;
+  }
+
+  function openEditTask(task) {
+    if (!task) return;
+    document.getElementById('edit-task-id').value = task.id;
+    document.getElementById('edit-task-name').value = task.title || '';
+    document.getElementById('edit-task-description').value = task.description || '';
+    document.getElementById('edit-task-due-date').value = task.due_date || '';
+    document.getElementById('edit-task-status').innerHTML = Object.entries(statuses)
+      .map(([key, label]) => `<option value="${key}" ${task.status === key ? 'selected' : ''}>${label}</option>`)
+      .join('');
+    document.getElementById('edit-task-modal').classList.remove('is-hidden');
+  }
+
+  async function saveTask(event) {
+    event.preventDefault();
+    const id = document.getElementById('edit-task-id').value;
+    const response = await fetch(`/api/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: document.getElementById('edit-task-name').value,
+        description: document.getElementById('edit-task-description').value,
+        due_date: document.getElementById('edit-task-due-date').value,
+        status: document.getElementById('edit-task-status').value
+      })
+    });
+    const data = await response.json();
+    document.getElementById('edit-task-message').textContent = data.success ? 'Aufgabe gespeichert.' : data.message;
+    if (data.success) {
+      document.getElementById('edit-task-modal').classList.add('is-hidden');
+      loadTasks();
+    }
+  }
+
+  async function deleteTask(id) {
+    if (!await window.showDeleteConfirm('Diese Aufgabe wirklich löschen?')) return;
+    const response = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      showTaskMessage(data.message || 'Löschen fehlgeschlagen.');
+      return;
+    }
+    showTaskMessage('Aufgabe erfolgreich gelöscht.');
+    loadTasks();
+  }
+
+  async function loadSuggestions(input) {
+    const value = input.value.trim();
+    const container = input.nextElementSibling;
+
+    if (value.length < 3) {
+      taskFilters[input.dataset.field] = '';
+      container.classList.add('is-hidden');
+      taskPage = 1;
+      loadTasks();
+      return;
+    }
+
+    const response = await fetch(`/api/tasks/suggestions?field=${input.dataset.field}&q=${encodeURIComponent(value)}`);
+    const data = await response.json();
+    container.innerHTML = (data.suggestions || [])
+      .map(item => `<button type="button" class="task-suggestion" data-value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</button>`)
+      .join('') || '<span class="task-suggestion-empty">Keine Treffer</span>';
+    container.classList.remove('is-hidden');
+
+    container.querySelectorAll('[data-value]').forEach(button => {
+      button.addEventListener('click', () => {
+        input.value = button.textContent;
+        taskFilters[input.dataset.field] = button.dataset.value;
+        container.classList.add('is-hidden');
+        taskPage = 1;
+        loadTasks();
+      });
+    });
+  }
+
+  async function openTaskMail(taskId) {
+    const response = await fetch(`/api/tasks/${taskId}/email-preview`);
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      showTaskMessage(data.message || 'E-Mail-Vorschau konnte nicht geladen werden.');
+      return;
+    }
+    const template = data.email_template;
+    document.getElementById('task-mail-title').textContent = `E-Mail-Vorschau: ${template.subject || template.task_title || ''}`;
+    document.getElementById('task-mail-html').srcdoc = template.body_html || '';
+    document.getElementById('task-mail-text').textContent = template.body_text || '';
+    document.getElementById('task-mail-modal').classList.remove('is-hidden');
+  }
+
+  document.getElementById('assign-task-btn').addEventListener('click', () => {
+    taskModal.classList.remove('is-hidden');
+  });
   document.getElementById('task-modal-close').addEventListener('click', () => taskModal.classList.add('is-hidden'));
   document.getElementById('task-form-cancel').addEventListener('click', () => taskModal.classList.add('is-hidden'));
   document.getElementById('edit-task-close').addEventListener('click', () => document.getElementById('edit-task-modal').classList.add('is-hidden'));
   document.getElementById('edit-task-cancel').addEventListener('click', () => document.getElementById('edit-task-modal').classList.add('is-hidden'));
   document.getElementById('edit-task-form').addEventListener('submit', saveTask);
   document.getElementById('task-mail-close').addEventListener('click', () => document.getElementById('task-mail-modal').classList.add('is-hidden'));
-  document.querySelectorAll('[data-sort]').forEach(button => button.addEventListener('click', () => { taskSort = button.dataset.sort; taskDirection = button.dataset.direction; taskPage = 1; loadTasks(); }));
-  document.querySelectorAll('.task-filter input').forEach(input => input.addEventListener('input', () => loadSuggestions(input)));
-  document.getElementById('task-prev').addEventListener('click', () => { taskPage = Math.max(1, taskPage - 1); loadTasks(); });
-  document.getElementById('task-next').addEventListener('click', () => { taskPage = Math.min(taskTotalPages, taskPage + 1); loadTasks(); });
+
+  document.querySelectorAll('[data-sort]').forEach(button => {
+    button.addEventListener('click', () => {
+      taskSort = button.dataset.sort;
+      taskDirection = button.dataset.direction;
+      taskPage = 1;
+      loadTasks();
+    });
+  });
+
+  document.querySelectorAll('.task-filter input').forEach(input => {
+    input.addEventListener('input', () => loadSuggestions(input));
+  });
+
+  document.getElementById('task-prev').addEventListener('click', () => {
+    taskPage = Math.max(1, taskPage - 1);
+    loadTasks();
+  });
+  document.getElementById('task-next').addEventListener('click', () => {
+    taskPage = Math.min(taskTotalPages, taskPage + 1);
+    loadTasks();
+  });
+
   document.getElementById('task-form').addEventListener('submit', async event => {
-    event.preventDefault(); const formMessage = document.getElementById('task-form-message');
+    event.preventDefault();
+    const formMessage = document.getElementById('task-form-message');
     const templateMode = document.getElementById('task-mode-toggle').checked;
     const payload = templateMode
-      ? {employee_id: document.getElementById('task-employee').value, entry_date: document.getElementById('task-entry-date').value, template_id: document.getElementById('task-template').value}
-      : {employee_id: document.getElementById('single-task-employee').value, theme: document.getElementById('single-task-theme').value, due_date: document.getElementById('single-task-due-date').value, title: document.getElementById('single-task-title').value, description: document.getElementById('single-task-description').value, email_template_id: document.getElementById('single-task-email').value || null};
-    const response = await fetch(templateMode ? '/api/tasks' : '/api/tasks/single', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-    const data = await response.json(); showTaskMessage(data.success ? `${data.created} Aufgaben zugewiesen.` : data.message, formMessage); if (data.success) { taskModal.classList.add('is-hidden'); loadTasks(); }
+      ? {
+          employee_id: document.getElementById('task-employee').value,
+          entry_date: document.getElementById('task-entry-date').value,
+          template_id: document.getElementById('task-template').value
+        }
+      : {
+          employee_id: document.getElementById('single-task-employee').value,
+          theme: document.getElementById('single-task-theme').value,
+          due_date: document.getElementById('single-task-due-date').value,
+          title: document.getElementById('single-task-title').value,
+          description: document.getElementById('single-task-description').value,
+          email_template_id: document.getElementById('single-task-email').value || null
+        };
+
+    const response = await fetch(templateMode ? '/api/tasks' : '/api/tasks/single', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    showTaskMessage(data.success ? `${data.created} Aufgaben zugewiesen.` : data.message, formMessage);
+    if (data.success) {
+      taskModal.classList.add('is-hidden');
+      loadTasks();
+    }
   });
-  document.getElementById('task-mode-toggle').addEventListener('change', event => { const templateContainer = document.getElementById('task-add-via-template'); const singleContainer = document.getElementById('task-add-singlejob'); templateContainer.classList.toggle('is-hidden', !event.target.checked); singleContainer.classList.toggle('is-hidden', event.target.checked); document.getElementById('task-employee').required = event.target.checked; document.getElementById('task-entry-date').required = event.target.checked; document.getElementById('task-template').required = event.target.checked; document.getElementById('single-task-due-date').required = !event.target.checked; document.getElementById('single-task-title').required = !event.target.checked; });
+
+  document.getElementById('task-mode-toggle').addEventListener('change', event => {
+    const templateContainer = document.getElementById('task-add-via-template');
+    const singleContainer = document.getElementById('task-add-singlejob');
+    templateContainer.classList.toggle('is-hidden', !event.target.checked);
+    singleContainer.classList.toggle('is-hidden', event.target.checked);
+
+    document.getElementById('task-employee').required = event.target.checked;
+    document.getElementById('task-entry-date').required = event.target.checked;
+    document.getElementById('task-template').required = event.target.checked;
+    document.getElementById('single-task-due-date').required = !event.target.checked;
+    document.getElementById('single-task-title').required = !event.target.checked;
+  });
+
   document.getElementById('task-entry-date').value = today;
   Promise.all([loadOptions(), loadTasks()]).catch(error => showTaskMessage(error.message));
 </script>

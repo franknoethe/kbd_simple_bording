@@ -4,48 +4,135 @@
 
 {% block content %}
   <header class="topbar">
-    <div><p class="eyebrow">MANAGEMENT</p><h1>Prozessaufgaben</h1><div id="template-context" class="template-context is-hidden"><span>Vorlage: <strong id="context-template"></strong></span><span>Prozess: <strong id="context-process"></strong></span><span>Location: <strong id="context-location"></strong></span><span>Job: <strong id="context-job"></strong></span></div></div>
+    <div>
+      <p class="eyebrow">MANAGEMENT</p>
+      <h1>Prozessaufgaben</h1>
+      <div id="template-context" class="template-context is-hidden">
+        <span>Vorlage: <strong id="context-template"></strong></span>
+        <span>Prozess: <strong id="context-process"></strong></span>
+        <span>Location: <strong id="context-location"></strong></span>
+        <span>Job: <strong id="context-job"></strong></span>
+      </div>
+    </div>
     <button class="primary-btn" id="add-task-btn" type="button">Neue Prozessaufgabe</button>
   </header>
 
   <section class="panel">
-    <div class="panel-header"><h2>Prozessaufgabenliste</h2><span id="task-count">0 Prozessaufgaben</span></div>
+    <div class="panel-header">
+      <h2>Prozessaufgabenliste</h2>
+      <span id="task-count">0 Prozessaufgaben</span>
+    </div>
     <div class="table-wrap">
       <table class="template-task-table">
-        <thead><tr>
-          <th><span class="sortable-heading">ID <span class="sort-buttons"><button class="sort-btn" data-sort-key="id" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="id" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
-          <th><span class="sortable-heading">STEP <span class="sort-buttons"><button class="sort-btn" data-sort-key="step" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="step" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span></th>
-          <th>
-            <div class="template-task-filter">
-              <input id="template-task-template-filter" type="search" placeholder="Vorlage suchen" autocomplete="off" aria-label="Vorlage filtern">
-              <div id="template-task-template-suggestions" class="template-task-suggestions is-hidden" role="listbox"></div>
-            </div>
-            <span class="sortable-heading">VORLAGE <span class="sort-buttons"><button class="sort-btn" data-sort-key="template_id" data-sort-direction="asc" type="button" title="ASC">↑</button><button class="sort-btn" data-sort-key="template_id" data-sort-direction="desc" type="button" title="DESC">↓</button></span></span>
-          </th>
-          <th>TITEL</th><th>BESCHREIBUNG</th><th>FÄLLIG</th><th>VERANTWORTLICH</th><th>EMAIL</th><th>PFLICHT</th><th>AKTIONEN</th>
-        </tr></thead>
-        <tbody id="task-tbody"><tr><td colspan="10" class="table-message">Lädt...</td></tr></tbody>
+        <thead>
+          <tr>
+            <th>
+              <span class="sortable-heading">
+                ID
+                <span class="sort-buttons">
+                  <button class="sort-btn" data-sort-key="id" data-sort-direction="asc" type="button" title="ASC">↑</button>
+                  <button class="sort-btn" data-sort-key="id" data-sort-direction="desc" type="button" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <span class="sortable-heading">
+                STEP
+                <span class="sort-buttons">
+                  <button class="sort-btn" data-sort-key="step" data-sort-direction="asc" type="button" title="ASC">↑</button>
+                  <button class="sort-btn" data-sort-key="step" data-sort-direction="desc" type="button" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <div class="template-task-filter">
+                <input id="template-task-template-filter" type="search" placeholder="Vorlage suchen" autocomplete="off" aria-label="Vorlage filtern">
+                <div id="template-task-template-suggestions" class="template-task-suggestions is-hidden" role="listbox"></div>
+              </div>
+              <span class="sortable-heading">
+                VORLAGE
+                <span class="sort-buttons">
+                  <button class="sort-btn" data-sort-key="template_id" data-sort-direction="asc" type="button" title="ASC">↑</button>
+                  <button class="sort-btn" data-sort-key="template_id" data-sort-direction="desc" type="button" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>TITEL</th>
+            <th>BESCHREIBUNG</th>
+            <th>FÄLLIG</th>
+            <th>VERANTWORTLICH</th>
+            <th>EMAIL</th>
+            <th>PFLICHT</th>
+            <th class="th-action">AKTIONEN</th>
+          </tr>
+        </thead>
+        <tbody id="task-tbody">
+          <tr>
+            <td colspan="10" class="table-message">Lädt...</td>
+          </tr>
+        </tbody>
       </table>
     </div>
-    <div id="task-pagination" class="table-pagination is-hidden" aria-label="Prozessaufgabennavigation"><button class="pagination-btn" id="task-prev" type="button" aria-label="Vorheriges Datenpaket">←</button><span class="pagination-info" id="task-page-info"></span><button class="pagination-btn" id="task-next" type="button" aria-label="Nächstes Datenpaket">→</button></div>
+    <div id="task-pagination" class="table-pagination is-hidden" aria-label="Prozessaufgabennavigation">
+      <button class="pagination-btn" id="task-prev" type="button" aria-label="Vorheriges Datenpaket">←</button>
+      <span class="pagination-info" id="task-page-info"></span>
+      <button class="pagination-btn" id="task-next" type="button" aria-label="Nächstes Datenpaket">→</button>
+    </div>
   </section>
 
-  <div id="task-modal" class="modal-overlay is-hidden"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
-    <div class="modal-header"><h2 id="task-modal-title">Neue Prozessaufgabe</h2><button class="close-btn" data-close="task-modal" type="button" aria-label="Dialog schließen">&times;</button></div>
-    <form id="task-form">
-      <input type="hidden" id="task-id">
-      <div class="form-group"><label for="task-step">STEP</label><input id="task-step" type="number" min="0" required></div>
-      <div class="form-group"><label for="task-template">VORLAGE</label><select id="task-template" required><option value="">Bitte auswählen</option></select></div>
-      <div class="form-group"><label for="task-title">TITEL</label><input id="task-title" maxlength="255" required></div>
-      <div class="form-group"><label for="task-description">BESCHREIBUNG</label><textarea id="task-description" rows="4"></textarea></div>
-      <div class="form-group"><label for="task-due">FÄLLIG</label><input id="task-due" type="number" min="0" required></div>
-      <div class="form-group"><label for="task-responsible">VERANTWORTLICH</label><select id="task-responsible" required><option value="">Bitte auswählen</option></select></div>
-      <div class="form-group"><label for="task-email">EMAIL</label><select id="task-email"><option value="">Bitte auswählen</option></select></div>
-      <label class="checkbox-field"><input id="task-mandatory" type="checkbox"> Pflicht</label>
-      <p id="task-form-message" class="form-message"></p>
-      <div class="modal-actions"><button class="primary-btn" type="submit">Speichern</button><button class="secondary-btn" data-close="task-modal" type="button">Abbrechen</button></div>
-    </form>
-  </div></div>
+  <div id="task-modal" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <div class="modal-header">
+        <h2 id="task-modal-title">Neue Prozessaufgabe</h2>
+        <button class="close-btn" data-close="task-modal" type="button" aria-label="Dialog schließen">&times;</button>
+      </div>
+      <form id="task-form">
+        <input type="hidden" id="task-id">
+        <div class="form-group">
+          <label for="task-step">STEP</label>
+          <input id="task-step" type="number" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="task-template">VORLAGE</label>
+          <select id="task-template" required>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-title">TITEL</label>
+          <input id="task-title" maxlength="255" required>
+        </div>
+        <div class="form-group">
+          <label for="task-description">BESCHREIBUNG</label>
+          <textarea id="task-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="task-due">FÄLLIG</label>
+          <input id="task-due" type="number" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="task-responsible">VERANTWORTLICH</label>
+          <select id="task-responsible" required>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-email">EMAIL</label>
+          <select id="task-email">
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <label class="checkbox-field">
+          <input id="task-mandatory" type="checkbox"> Pflicht
+        </label>
+        <p id="task-form-message" class="form-message"></p>
+        <div class="modal-actions">
+          <button class="primary-btn" type="submit">Speichern</button>
+          <button class="secondary-btn" data-close="task-modal" type="button">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script>
     let tasks = [];
@@ -63,28 +150,257 @@
       document.getElementById('task-form').addEventListener('submit', saveTask);
       document.getElementById('task-prev').addEventListener('click', () => changeTaskPage(-1));
       document.getElementById('task-next').addEventListener('click', () => changeTaskPage(1));
-      document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeTaskModal(button.dataset.close)));
-      document.querySelectorAll('[data-sort-key]').forEach(button => button.addEventListener('click', () => { taskSortKey = button.dataset.sortKey; taskSortDirection = button.dataset.sortDirection; taskPage = 1; loadTasks(); }));
+      document.querySelectorAll('[data-close]').forEach(button => {
+        button.addEventListener('click', () => closeTaskModal(button.dataset.close));
+      });
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.addEventListener('click', () => {
+          taskSortKey = button.dataset.sortKey;
+          taskSortDirection = button.dataset.sortDirection;
+          taskPage = 1;
+          loadTasks();
+        });
+      });
       document.getElementById('task-template').addEventListener('change', () => updateResponsibleOptions());
       document.getElementById('template-task-template-filter').addEventListener('input', handleTemplateFilterInput);
       document.addEventListener('click', handleOutsideTemplateSuggestionsClick);
     });
-    async function loadTaskOptions() { const response = await fetch('/api/template-tasks/options'); const data = await response.json(); if (!data.success) throw new Error(data.message || 'Optionen konnten nicht geladen werden.'); taskOptions = data; fillSelect('task-template', data.templates, item => item.name); updateResponsibleOptions(); fillSelect('task-email', data.email_templates, item => `${item.name}${item.subject ? ` - ${item.subject}` : ''}`, true); }
-    function fillSelect(id, items, labeler, includeNone = false) { const select = document.getElementById(id); select.innerHTML = '<option value="">Bitte auswählen</option>'; if (includeNone) { const option = document.createElement('option'); option.value = 'none'; option.textContent = 'Keine'; select.appendChild(option); } items.forEach(item => { const option = document.createElement('option'); option.value = item.id; option.textContent = labeler(item); select.appendChild(option); }); }
-    function updateResponsibleOptions(selectedEmployeeId = '') { const template = taskOptions.templates.find(item => String(item.id) === String(document.getElementById('task-template').value)); const employees = template ? taskOptions.employees.filter(item => String(item.location_id) === String(template.location_id)) : []; fillSelect('task-responsible', employees, item => `${item.name} | ${item.function_name || 'Keine Funktion'}`); if (selectedEmployeeId && employees.some(item => String(item.id) === String(selectedEmployeeId))) document.getElementById('task-responsible').value = String(selectedEmployeeId); }
-    async function loadTasks() { try { const params = new URLSearchParams({ page: taskPage, sort: taskSortKey, direction: taskSortDirection }); if (selectedTemplateId) params.set('template_id', selectedTemplateId); const response = await fetch(`/api/template-tasks?${params}`); const data = await response.json(); if (!data.success) throw new Error(data.message || 'Prozessaufgaben konnten nicht geladen werden.'); tasks = data.template_tasks; taskPage = data.page; taskTotalPages = data.total_pages; renderTemplateContext(data.template_context); renderTasks(data.total); } catch (error) { document.getElementById('task-tbody').innerHTML = `<tr><td colspan="10" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`; } }
-    function renderTemplateContext(context) { const container = document.getElementById('template-context'); if (!context) { container.classList.add('is-hidden'); return; } document.getElementById('context-template').textContent = context.name || 'Nicht zugeordnet'; document.getElementById('context-process').textContent = context.process_type_name || 'Nicht zugeordnet'; document.getElementById('context-location').textContent = context.location_name || 'Nicht zugeordnet'; document.getElementById('context-job').textContent = context.job_name || 'Nicht zugeordnet'; container.classList.remove('is-hidden'); if (selectedTemplateId) document.getElementById('template-task-template-filter').value = context.name || ''; }
-    function handleTemplateFilterInput(event) { const value = event.target.value.trim().toLocaleLowerCase('de'); selectedTemplateId = null; taskPage = 1; if (value.length < 3) { hideTemplateSuggestions(); loadTasks(); return; } const matches = taskOptions.templates.filter(template => String(template.name || '').toLocaleLowerCase('de').includes(value)).slice(0, 10); const suggestions = document.getElementById('template-task-template-suggestions'); suggestions.innerHTML = matches.length ? matches.map(template => `<button class="template-task-suggestion" type="button" data-template-id="${template.id}" data-template-name="${encodeURIComponent(template.name)}">${escapeHtml(template.name)}</button>`).join('') : '<div class="template-task-suggestion-empty">Keine Vorlage gefunden</div>'; suggestions.classList.remove('is-hidden'); suggestions.querySelectorAll('[data-template-id]').forEach(button => button.addEventListener('click', () => selectTemplateFilter(Number(button.dataset.templateId), decodeURIComponent(button.dataset.templateName)))); }
-    function selectTemplateFilter(templateId, templateName) { selectedTemplateId = templateId; document.getElementById('template-task-template-filter').value = templateName; hideTemplateSuggestions(); taskPage = 1; loadTasks(); }
-    function hideTemplateSuggestions() { document.getElementById('template-task-template-suggestions').classList.add('is-hidden'); }
-    function handleOutsideTemplateSuggestionsClick(event) { const filter = document.querySelector('.template-task-filter'); if (filter && !filter.contains(event.target)) hideTemplateSuggestions(); }
-    function renderTasks(total) { const tbody = document.getElementById('task-tbody'); tbody.replaceChildren(); document.getElementById('task-count').textContent = `${total} Prozessaufgabe${total === 1 ? '' : 'n'}`; updateTaskSortButtons(); if (!tasks.length) tbody.innerHTML = '<tr><td colspan="10" class="table-message">Keine Prozessaufgaben gefunden.</td></tr>'; const groups = new Map(); tasks.forEach(task => { const key = String(task.template_id); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(task); }); let colorIndex = 0; groups.forEach(groupTasks => { const containerRow = document.createElement('tr'); const containerClass = `template-task-container-${colorIndex % 4}`; containerRow.innerHTML = `<th colspan="10"><div class="template-task-container ${containerClass}">Vorlage: ${escapeHtml(groupTasks[0].template_name || 'Nicht zugeordnet')}</div></th>`; tbody.appendChild(containerRow); groupTasks.forEach(task => { const row = document.createElement('tr'); row.className = `template-task-row ${containerClass}`; row.innerHTML = `<td>${task.id}</td><td>${task.step}</td><td>${escapeHtml(task.template_name || '')}</td><td>${escapeHtml(task.title)}</td><td>${escapeHtml(task.description || '')}</td><td>${task.due_offset_days}</td><td>${escapeHtml(task.responsible_name || '')}</td><td>${escapeHtml(task.email_template_name || '')}</td><td>${task.mandatory ? 'Ja' : 'Nein'}</td><td class="action-btns"><button class="edit-btn" type="button">Bearbeiten</button><button class="delete-btn" type="button">Löschen</button></td>`; row.querySelector('.edit-btn').addEventListener('click', () => openTaskModal(task)); row.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id)); tbody.appendChild(row); }); colorIndex += 1; }); const pagination = document.getElementById('task-pagination'); pagination.classList.toggle('is-hidden', total <= 800); document.getElementById('task-page-info').textContent = `Seite ${taskPage} von ${taskTotalPages}`; document.getElementById('task-prev').disabled = taskPage <= 1; document.getElementById('task-next').disabled = taskPage >= taskTotalPages; }
-    function updateTaskSortButtons() { document.querySelectorAll('[data-sort-key]').forEach(button => button.classList.toggle('sort-btn-active', button.dataset.sortKey === taskSortKey && button.dataset.sortDirection === taskSortDirection)); }
-    function changeTaskPage(delta) { taskPage = Math.max(1, Math.min(taskTotalPages, taskPage + delta)); loadTasks(); }
-    function openTaskModal(task = null) { document.getElementById('task-modal-title').textContent = task ? 'Prozessaufgabe bearbeiten' : 'Neue Prozessaufgabe'; document.getElementById('task-id').value = task?.id || ''; document.getElementById('task-step').value = task?.step ?? ''; document.getElementById('task-template').value = task?.template_id || ''; updateResponsibleOptions(task?.responsible_function_id || ''); document.getElementById('task-title').value = task?.title || ''; document.getElementById('task-description').value = task?.description || ''; document.getElementById('task-due').value = task?.due_offset_days ?? 0; document.getElementById('task-email').value = task?.email_template_id || ''; document.getElementById('task-mandatory').checked = task?.mandatory ?? false; document.getElementById('task-form-message').textContent = ''; document.getElementById('task-modal').classList.remove('is-hidden'); }
-    async function saveTask(event) { event.preventDefault(); const id = document.getElementById('task-id').value; const emailTemplate = document.getElementById('task-email').value; const payload = { step: document.getElementById('task-step').value, template_id: document.getElementById('task-template').value, title: document.getElementById('task-title').value, description: document.getElementById('task-description').value, due_offset_days: document.getElementById('task-due').value, responsible_function_id: document.getElementById('task-responsible').value, email_template_id: emailTemplate === 'none' || emailTemplate === '' ? null : emailTemplate, mandatory: document.getElementById('task-mandatory').checked }; const response = await fetch(`/api/template-tasks${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await response.json(); if (!data.success) { document.getElementById('task-form-message').textContent = data.message; return; } closeTaskModal('task-modal'); loadTasks(); }
-    async function deleteTask(id) { if (!await window.showDeleteConfirm('Diese Prozessaufgabe und bereits zugewiesene Aufgaben wirklich löschen?')) return; try { const response = await fetch(`/api/template-tasks/${id}`, { method: 'DELETE' }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Löschen fehlgeschlagen.'); loadTasks(); } catch (error) { document.getElementById('task-tbody').innerHTML = `<tr><td colspan="10" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`; } }
-    function closeTaskModal(id) { document.getElementById(id).classList.add('is-hidden'); }
-    function escapeHtml(value) { const element = document.createElement('span'); element.textContent = value; return element.innerHTML; }
+
+    async function loadTaskOptions() {
+      const response = await fetch('/api/template-tasks/options');
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'Optionen konnten nicht geladen werden.');
+      taskOptions = data;
+      fillSelect('task-template', data.templates, item => item.name);
+      updateResponsibleOptions();
+      fillSelect('task-email', data.email_templates, item => `${item.name}${item.subject ? ` - ${item.subject}` : ''}`, true);
+    }
+
+    function fillSelect(id, items, labeler, includeNone = false) {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Bitte auswählen</option>';
+      if (includeNone) {
+        const option = document.createElement('option');
+        option.value = 'none';
+        option.textContent = 'Keine';
+        select.appendChild(option);
+      }
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = labeler(item);
+        select.appendChild(option);
+      });
+    }
+
+    function updateResponsibleOptions(selectedEmployeeId = '') {
+      const template = taskOptions.templates.find(item => String(item.id) === String(document.getElementById('task-template').value));
+      const employees = template ? taskOptions.employees.filter(item => String(item.location_id) === String(template.location_id)) : [];
+      fillSelect('task-responsible', employees, item => `${item.name} | ${item.function_name || 'Keine Funktion'}`);
+      if (selectedEmployeeId && employees.some(item => String(item.id) === String(selectedEmployeeId))) {
+        document.getElementById('task-responsible').value = String(selectedEmployeeId);
+      }
+    }
+
+    async function loadTasks() {
+      try {
+        const params = new URLSearchParams({ page: taskPage, sort: taskSortKey, direction: taskSortDirection });
+        if (selectedTemplateId) params.set('template_id', selectedTemplateId);
+        const response = await fetch(`/api/template-tasks?${params}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Prozessaufgaben konnten nicht geladen werden.');
+        tasks = data.template_tasks;
+        taskPage = data.page;
+        taskTotalPages = data.total_pages;
+        renderTemplateContext(data.template_context);
+        renderTasks(data.total);
+      } catch (error) {
+        document.getElementById('task-tbody').innerHTML = `<tr><td colspan="10" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function renderTemplateContext(context) {
+      const container = document.getElementById('template-context');
+      if (!context) {
+        container.classList.add('is-hidden');
+        return;
+      }
+      document.getElementById('context-template').textContent = context.name || 'Nicht zugeordnet';
+      document.getElementById('context-process').textContent = context.process_type_name || 'Nicht zugeordnet';
+      document.getElementById('context-location').textContent = context.location_name || 'Nicht zugeordnet';
+      document.getElementById('context-job').textContent = context.job_name || 'Nicht zugeordnet';
+      container.classList.remove('is-hidden');
+      if (selectedTemplateId) document.getElementById('template-task-template-filter').value = context.name || '';
+    }
+
+    function handleTemplateFilterInput(event) {
+      const value = event.target.value.trim().toLocaleLowerCase('de');
+      selectedTemplateId = null;
+      taskPage = 1;
+      if (value.length < 3) {
+        hideTemplateSuggestions();
+        loadTasks();
+        return;
+      }
+      const matches = taskOptions.templates.filter(template => String(template.name || '').toLocaleLowerCase('de').includes(value)).slice(0, 10);
+      const suggestions = document.getElementById('template-task-template-suggestions');
+      suggestions.innerHTML = matches.length
+        ? matches.map(template => `<button class="template-task-suggestion" type="button" data-template-id="${template.id}" data-template-name="${encodeURIComponent(template.name)}">${escapeHtml(template.name)}</button>`).join('')
+        : '<div class="template-task-suggestion-empty">Keine Vorlage gefunden</div>';
+      suggestions.classList.remove('is-hidden');
+      suggestions.querySelectorAll('[data-template-id]').forEach(button => {
+        button.addEventListener('click', () => selectTemplateFilter(Number(button.dataset.templateId), decodeURIComponent(button.dataset.templateName)));
+      });
+    }
+
+    function selectTemplateFilter(templateId, templateName) {
+      selectedTemplateId = templateId;
+      document.getElementById('template-task-template-filter').value = templateName;
+      hideTemplateSuggestions();
+      taskPage = 1;
+      loadTasks();
+    }
+
+    function hideTemplateSuggestions() {
+      document.getElementById('template-task-template-suggestions').classList.add('is-hidden');
+    }
+
+    function handleOutsideTemplateSuggestionsClick(event) {
+      const filter = document.querySelector('.template-task-filter');
+      if (filter && !filter.contains(event.target)) hideTemplateSuggestions();
+    }
+
+    function renderTasks(total) {
+      const tbody = document.getElementById('task-tbody');
+      tbody.replaceChildren();
+      document.getElementById('task-count').textContent = `${total} Prozessaufgabe${total === 1 ? '' : 'n'}`;
+      updateTaskSortButtons();
+
+      if (!tasks.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="table-message">Keine Prozessaufgaben gefunden.</td></tr>';
+      }
+
+      const groups = new Map();
+      tasks.forEach(task => {
+        const key = String(task.template_id);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(task);
+      });
+
+      let colorIndex = 0;
+      groups.forEach(groupTasks => {
+        const containerRow = document.createElement('tr');
+        const containerClass = `template-task-container-${colorIndex % 4}`;
+        containerRow.innerHTML = `<th colspan="10"><div class="template-task-container ${containerClass}">Vorlage: ${escapeHtml(groupTasks[0].template_name || 'Nicht zugeordnet')}</div></th>`;
+        tbody.appendChild(containerRow);
+
+        groupTasks.forEach(task => {
+          const row = document.createElement('tr');
+          row.className = `template-task-row ${containerClass}`;
+          row.innerHTML = `
+            <td>${task.id}</td>
+            <td>${task.step}</td>
+            <td>${escapeHtml(task.template_name || '')}</td>
+            <td>${escapeHtml(task.title)}</td>
+            <td>${escapeHtml(task.description || '')}</td>
+            <td>${task.due_offset_days}</td>
+            <td>${escapeHtml(task.responsible_name || '')}</td>
+            <td>${escapeHtml(task.email_template_name || '')}</td>
+            <td>${task.mandatory ? 'Ja' : 'Nein'}</td>
+            <td class="action-btns">
+              <button class="edit-btn" type="button" title="Bearbeiten">E</button>
+              <button class="delete-btn" type="button" title="Löschen">-</button>
+            </td>
+          `;
+          row.querySelector('.edit-btn').addEventListener('click', () => openTaskModal(task));
+          row.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+          tbody.appendChild(row);
+        });
+        colorIndex += 1;
+      });
+
+      const pagination = document.getElementById('task-pagination');
+      pagination.classList.toggle('is-hidden', total <= 800);
+      document.getElementById('task-page-info').textContent = `Seite ${taskPage} von ${taskTotalPages}`;
+      document.getElementById('task-prev').disabled = taskPage <= 1;
+      document.getElementById('task-next').disabled = taskPage >= taskTotalPages;
+    }
+
+    function updateTaskSortButtons() {
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.classList.toggle('sort-btn-active', button.dataset.sortKey === taskSortKey && button.dataset.sortDirection === taskSortDirection);
+      });
+    }
+
+    function changeTaskPage(delta) {
+      taskPage = Math.max(1, Math.min(taskTotalPages, taskPage + delta));
+      loadTasks();
+    }
+
+    function openTaskModal(task = null) {
+      document.getElementById('task-modal-title').textContent = task ? 'Prozessaufgabe bearbeiten' : 'Neue Prozessaufgabe';
+      document.getElementById('task-id').value = task?.id || '';
+      document.getElementById('task-step').value = task?.step ?? '';
+      document.getElementById('task-template').value = task?.template_id || '';
+      updateResponsibleOptions(task?.responsible_function_id || '');
+      document.getElementById('task-title').value = task?.title || '';
+      document.getElementById('task-description').value = task?.description || '';
+      document.getElementById('task-due').value = task?.due_offset_days ?? 0;
+      document.getElementById('task-email').value = task?.email_template_id || '';
+      document.getElementById('task-mandatory').checked = task?.mandatory ?? false;
+      document.getElementById('task-form-message').textContent = '';
+      document.getElementById('task-modal').classList.remove('is-hidden');
+    }
+
+    async function saveTask(event) {
+      event.preventDefault();
+      const id = document.getElementById('task-id').value;
+      const emailTemplate = document.getElementById('task-email').value;
+      const payload = {
+        step: document.getElementById('task-step').value,
+        template_id: document.getElementById('task-template').value,
+        title: document.getElementById('task-title').value,
+        description: document.getElementById('task-description').value,
+        due_offset_days: document.getElementById('task-due').value,
+        responsible_function_id: document.getElementById('task-responsible').value,
+        email_template_id: emailTemplate === 'none' || emailTemplate === '' ? null : emailTemplate,
+        mandatory: document.getElementById('task-mandatory').checked
+      };
+
+      const response = await fetch(`/api/template-tasks${id ? `/${id}` : ''}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!data.success) {
+        document.getElementById('task-form-message').textContent = data.message;
+        return;
+      }
+      closeTaskModal('task-modal');
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      if (!await window.showDeleteConfirm('Diese Prozessaufgabe und bereits zugewiesene Aufgaben wirklich löschen?')) return;
+      try {
+        const response = await fetch(`/api/template-tasks/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Löschen fehlgeschlagen.');
+        loadTasks();
+      } catch (error) {
+        document.getElementById('task-tbody').innerHTML = `<tr><td colspan="10" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function closeTaskModal(id) {
+      document.getElementById(id).classList.add('is-hidden');
+    }
+
+    function escapeHtml(value) {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
   </script>
 {% endblock %}

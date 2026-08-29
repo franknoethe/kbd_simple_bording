@@ -374,8 +374,7 @@ th {
 
 th.th-action {
     text-align: right;
-    min-width: 115px;
-    padding: 16px 0px;
+    min-width: 130px;
 }
 
 .sortable-heading {
@@ -830,9 +829,9 @@ th.th-action {
 .status-btn {
   border: 0;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 9px 10px;
   font: inherit;
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 700;
   color: #fff;
   cursor: pointer;
@@ -951,7 +950,6 @@ th.th-action {
 }
 
 .secondary-btn {
-  padding: 11px 18px;
   background: #edf1f7;
   color: var(--text);
 }
@@ -1001,6 +999,7 @@ th.th-action {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .logout-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -1153,7 +1152,14 @@ th.th-action {
       text-align: left;
       border-bottom: 1px solid var(--border);
       font-size: 14px;
-      vertical-align: middle;
+      vertical-align: bottom;
+  }
+  th {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    vertical-align: bottom;
   }
 }
 

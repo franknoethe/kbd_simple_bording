@@ -12,48 +12,164 @@
   </header>
 
   <section class="panel">
-    <div class="panel-header"><h2>Templateliste</h2><span id="template-count">0 Templates</span></div>
+    <div class="panel-header">
+      <h2>Templateliste</h2>
+      <span id="template-count">0 Templates</span>
+    </div>
     <div class="table-wrap">
       <table class="template-table">
         <thead>
           <tr>
-            <th><span class="sortable-heading">ID <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th><div class="template-filter"><input type="search" data-filter-field="process_type_id" placeholder="PROZESS suchen" aria-label="PROZESS suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">PROZESS <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="process_type_id" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="process_type_id" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th><div class="template-filter"><input type="search" data-filter-field="location_id" placeholder="LOCATION suchen" aria-label="LOCATION suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">LOCATION <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th><div class="template-filter"><input type="search" data-filter-field="job_id" placeholder="JOB suchen" aria-label="JOB suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">JOB <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th><div class="template-filter"><input type="search" data-filter-field="name" placeholder="NAME suchen" aria-label="NAME suchen" autocomplete="off"><div class="template-suggestions is-hidden"></div></div><span class="sortable-heading">NAME <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th><span class="sortable-heading">STATUS <span class="sort-buttons"><button class="sort-btn" type="button" data-sort-key="active" data-sort-direction="asc" title="ASC">↑</button><button class="sort-btn" type="button" data-sort-key="active" data-sort-direction="desc" title="DESC">↓</button></span></span></th>
-            <th>AKTIONEN</th>
+            <th>
+              <span class="sortable-heading">
+                ID
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="id" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <div class="template-filter">
+                <input type="search" data-filter-field="process_type_id" placeholder="PROZESS suchen" aria-label="PROZESS suchen" autocomplete="off">
+                <div class="template-suggestions is-hidden"></div>
+              </div>
+              <span class="sortable-heading">
+                PROZESS
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="process_type_id" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="process_type_id" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <div class="template-filter">
+                <input type="search" data-filter-field="location_id" placeholder="LOCATION suchen" aria-label="LOCATION suchen" autocomplete="off">
+                <div class="template-suggestions is-hidden"></div>
+              </div>
+              <span class="sortable-heading">
+                LOCATION
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="location_id" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <div class="template-filter">
+                <input type="search" data-filter-field="job_id" placeholder="JOB suchen" aria-label="JOB suchen" autocomplete="off">
+                <div class="template-suggestions is-hidden"></div>
+              </div>
+              <span class="sortable-heading">
+                JOB
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="job_id" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <div class="template-filter">
+                <input type="search" data-filter-field="name" placeholder="NAME suchen" aria-label="NAME suchen" autocomplete="off">
+                <div class="template-suggestions is-hidden"></div>
+              </div>
+              <span class="sortable-heading">
+                NAME
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="name" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th>
+              <span class="sortable-heading">
+                STATUS
+                <span class="sort-buttons">
+                  <button class="sort-btn" type="button" data-sort-key="active" data-sort-direction="asc" title="ASC">↑</button>
+                  <button class="sort-btn" type="button" data-sort-key="active" data-sort-direction="desc" title="DESC">↓</button>
+                </span>
+              </span>
+            </th>
+            <th class="th-action">AKTIONEN</th>
           </tr>
         </thead>
-        <tbody id="templates-tbody"><tr><td colspan="7" class="table-message">Lädt...</td></tr></tbody>
+        <tbody id="templates-tbody">
+          <tr>
+            <td colspan="7" class="table-message">Lädt...</td>
+          </tr>
+        </tbody>
       </table>
     </div>
-    <div id="template-pagination" class="table-pagination is-hidden" aria-label="Templatenavigation"><button class="pagination-btn" id="template-prev-page" type="button" aria-label="Vorheriges Datenpaket">←</button><span class="pagination-info" id="template-page-info"></span><button class="pagination-btn" id="template-next-page" type="button" aria-label="Nächstes Datenpaket">→</button></div>
+    <div id="template-pagination" class="table-pagination is-hidden" aria-label="Templatenavigation">
+      <button class="pagination-btn" id="template-prev-page" type="button" aria-label="Vorheriges Datenpaket">←</button>
+      <span class="pagination-info" id="template-page-info"></span>
+      <button class="pagination-btn" id="template-next-page" type="button" aria-label="Nächstes Datenpaket">→</button>
+    </div>
   </section>
 
-  <div id="template-modal" class="modal-overlay is-hidden"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="template-modal-title">
-    <div class="modal-header"><h2 id="template-modal-title">Neues Template</h2><button class="close-btn" type="button" data-close="template-modal" aria-label="Dialog schließen">&times;</button></div>
-    <form id="template-form">
-      <input type="hidden" id="template-id">
-      <div class="form-group"><label for="template-process-type">PROZESS</label><select id="template-process-type" required><option value="">Bitte auswählen</option></select></div>
-      <div class="form-group"><label for="template-location">LOCATION</label><select id="template-location" required><option value="">Bitte auswählen</option></select></div>
-      <div class="form-group"><label for="template-job">JOB</label><select id="template-job" required><option value="">Bitte auswählen</option></select></div>
-      <div class="form-group"><label for="template-name">NAME</label><input id="template-name" maxlength="255" required></div>
-      <label class="checkbox-field"><input id="template-active" type="checkbox" checked> Aktiv</label>
-      <p id="template-form-message" class="form-message"></p>
-      <div class="modal-actions"><button class="primary-btn" type="submit">Speichern</button><button class="secondary-btn" type="button" data-close="template-modal">Abbrechen</button></div>
-    </form>
-  </div></div>
+  <div id="template-modal" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="template-modal-title">
+      <div class="modal-header">
+        <h2 id="template-modal-title">Neues Template</h2>
+        <button class="close-btn" type="button" data-close="template-modal" aria-label="Dialog schließen">&times;</button>
+      </div>
+      <form id="template-form">
+        <input type="hidden" id="template-id">
+        <div class="form-group">
+          <label for="template-process-type">PROZESS</label>
+          <select id="template-process-type" required>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="template-location">LOCATION</label>
+          <select id="template-location" required>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="template-job">JOB</label>
+          <select id="template-job" required>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="template-name">NAME</label>
+          <input id="template-name" maxlength="255" required>
+        </div>
+        <label class="checkbox-field">
+          <input id="template-active" type="checkbox" checked> Aktiv
+        </label>
+        <p id="template-form-message" class="form-message"></p>
+        <div class="modal-actions">
+          <button class="primary-btn" type="submit">Speichern</button>
+          <button class="secondary-btn" type="button" data-close="template-modal">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  <div id="copy-template-modal" class="modal-overlay is-hidden"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="copy-template-modal-title">
-    <div class="modal-header"><h2 id="copy-template-modal-title">Prozessaufgaben kopieren</h2><button class="close-btn" type="button" data-close="copy-template-modal" aria-label="Dialog schließen">&times;</button></div>
-    <form id="copy-template-form">
-      <div class="form-group"><label for="copy-target-template">KOPIERN AUF TEMPLATE</label><select id="copy-target-template" required disabled><option value="">Bitte auswählen</option></select></div>
-      <p id="copy-template-message" class="form-message"></p>
-      <div class="modal-actions"><button class="primary-btn" id="copy-template-submit" type="button" disabled>Übernehmen</button><button class="secondary-btn" type="button" data-close="copy-template-modal">Abbrechen</button></div>
-    </form>
-  </div></div>
+  <div id="copy-template-modal" class="modal-overlay is-hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="copy-template-modal-title">
+      <div class="modal-header">
+        <h2 id="copy-template-modal-title">Prozessaufgaben kopieren</h2>
+        <button class="close-btn" type="button" data-close="copy-template-modal" aria-label="Dialog schließen">&times;</button>
+      </div>
+      <form id="copy-template-form">
+        <div class="form-group">
+          <label for="copy-target-template">KOPIERN AUF TEMPLATE</label>
+          <select id="copy-target-template" required disabled>
+            <option value="">Bitte auswählen</option>
+          </select>
+        </div>
+        <p id="copy-template-message" class="form-message"></p>
+        <div class="modal-actions">
+          <button class="primary-btn" id="copy-template-submit" type="button" disabled>Übernehmen</button>
+          <button class="secondary-btn" type="button" data-close="copy-template-modal">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script>
     let templates = [];
@@ -74,10 +190,23 @@
       document.getElementById('template-prev-page').addEventListener('click', () => changeTemplatePage(-1));
       document.getElementById('template-next-page').addEventListener('click', () => changeTemplatePage(1));
       document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
-      document.querySelectorAll('[data-sort-key]').forEach(button => button.addEventListener('click', () => { templateSortKey = button.dataset.sortKey; templateSortDirection = button.dataset.sortDirection; templatePage = 1; loadTemplates(); }));
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.addEventListener('click', () => {
+          templateSortKey = button.dataset.sortKey;
+          templateSortDirection = button.dataset.sortDirection;
+          templatePage = 1;
+          loadTemplates();
+        });
+      });
       document.querySelectorAll('[data-filter-field]').forEach(input => input.addEventListener('input', () => handleFilterInput(input)));
-      document.addEventListener('click', event => { if (!event.target.closest('.template-filter')) document.querySelectorAll('.template-suggestions').forEach(item => item.classList.add('is-hidden')); });
-      document.getElementById('copy-target-template').addEventListener('change', event => { document.getElementById('copy-template-submit').disabled = !event.target.value; });
+      document.addEventListener('click', event => {
+        if (!event.target.closest('.template-filter')) {
+          document.querySelectorAll('.template-suggestions').forEach(item => item.classList.add('is-hidden'));
+        }
+      });
+      document.getElementById('copy-target-template').addEventListener('change', event => {
+        document.getElementById('copy-template-submit').disabled = !event.target.value;
+      });
       document.getElementById('copy-template-submit').addEventListener('click', copyTemplateTasks);
     });
 
@@ -90,7 +219,18 @@
       fillSelect('template-location', data.locations);
       updateTemplateJobOptions('');
     }
-    function fillSelect(id, items) { const select = document.getElementById(id); select.innerHTML = '<option value="">Bitte auswählen</option>'; items.forEach(item => { const option = document.createElement('option'); option.value = item.id; option.textContent = item.name; select.appendChild(option); }); }
+
+    function fillSelect(id, items) {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Bitte auswählen</option>';
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name;
+        select.appendChild(option);
+      });
+    }
+
     function updateTemplateJobOptions(locationId, selectedJobId = '') {
       const matchingJobs = templateOptions.jobs.filter(job => String(job.location_id) === String(locationId));
       fillSelect('template-job', matchingJobs);
@@ -100,29 +240,244 @@
       }
       jobSelect.disabled = !locationId;
     }
+
     async function loadTemplates() {
       const params = new URLSearchParams({ page: templatePage, sort: templateSortKey, direction: templateSortDirection });
-      Object.entries(templateFilters).forEach(([key, value]) => { if (value) params.set(key, value); });
-      try { const response = await fetch(`/api/templates?${params}`); const data = await response.json(); if (!data.success) throw new Error(data.message); templates = data.templates; templatePage = data.page; templateTotalPages = data.total_pages; renderTemplates(data.total); } catch (error) { document.getElementById('templates-tbody').innerHTML = `<tr><td colspan="7" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`; }
+      Object.entries(templateFilters).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
+      try {
+        const response = await fetch(`/api/templates?${params}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message);
+        templates = data.templates;
+        templatePage = data.page;
+        templateTotalPages = data.total_pages;
+        renderTemplates(data.total);
+      } catch (error) {
+        document.getElementById('templates-tbody').innerHTML = `<tr><td colspan="7" class="table-message table-message-error">${escapeHtml(error.message)}</td></tr>`;
+      }
     }
+
     function renderTemplates(total) {
-      const tbody = document.getElementById('templates-tbody'); tbody.replaceChildren(); document.getElementById('template-count').textContent = `${total} Template${total === 1 ? '' : 's'}`;
+      const tbody = document.getElementById('templates-tbody');
+      tbody.replaceChildren();
+      document.getElementById('template-count').textContent = `${total} Template${total === 1 ? '' : 's'}`;
       updateTemplateSortButtons();
-      if (!templates.length) { tbody.innerHTML = '<tr><td colspan="7" class="table-message">Keine Templates gefunden.</td></tr>'; }
-      templates.forEach(template => { const row = document.createElement('tr'); const taskCount = Number(template.task_count || 0); row.innerHTML = `<td>${template.id}</td><td>${escapeHtml(template.process_type_name || '')}</td><td>${escapeHtml(template.location_name || '')}</td><td>${escapeHtml(template.job_name || '')}</td><td>${escapeHtml(template.name)}</td><td><span class="status-pill ${template.active ? 'status-active' : 'status-inactive'}">${template.active ? 'Aktiv' : 'Inaktiv'}</span></td><td class="action-btns"><button class="edit-btn" type="button">Bearbeiten</button><a class="secondary-btn" href="/template-tasks?template_id=${encodeURIComponent(template.id)}">${taskCount} - Aufgaben</a>${taskCount > 0 ? '<button class="secondary-btn copy-template-btn" type="button">Kopieren</button>' : ''}<button class="delete-btn" type="button">Löschen</button></td>`; row.querySelector('.edit-btn').addEventListener('click', () => openTemplateModal(template)); row.querySelector('.delete-btn').addEventListener('click', () => deleteTemplate(template.id)); const copyButton = row.querySelector('.copy-template-btn'); if (copyButton) copyButton.addEventListener('click', () => openCopyTemplateModal(template.id)); tbody.appendChild(row); });
-      const pagination = document.getElementById('template-pagination'); pagination.classList.toggle('is-hidden', total <= 800); document.getElementById('template-page-info').textContent = `Seite ${templatePage} von ${templateTotalPages}`; document.getElementById('template-prev-page').disabled = templatePage <= 1; document.getElementById('template-next-page').disabled = templatePage >= templateTotalPages;
+
+      if (!templates.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="table-message">Keine Templates gefunden.</td></tr>';
+      }
+
+      templates.forEach(template => {
+        const row = document.createElement('tr');
+        const taskCount = Number(template.task_count || 0);
+        row.innerHTML = `
+          <td>${template.id}</td>
+          <td>${escapeHtml(template.process_type_name || '')}</td>
+          <td>${escapeHtml(template.location_name || '')}</td>
+          <td>${escapeHtml(template.job_name || '')}</td>
+          <td>${escapeHtml(template.name)}</td>
+          <td>
+            <span class="status-pill ${template.active ? 'status-active' : 'status-inactive'}">
+              ${template.active ? 'Aktiv' : 'Inaktiv'}
+            </span>
+          </td>
+          <td class="action-btns">
+            <a class="secondary-btn" href="/template-tasks?template_id=${encodeURIComponent(template.id)}">${taskCount} - Aufgaben</a>
+            ${taskCount > 0 ? '<button class="secondary-btn copy-template-btn" type="button" title="Kopieren">&#10697;</button>' : ''}
+            <button class="edit-btn" type="button" title="Bearbeiten">E</button>
+            <button class="delete-btn" type="button" title="Löschen">-</button>
+          </td>
+        `;
+        row.querySelector('.edit-btn').addEventListener('click', () => openTemplateModal(template));
+        row.querySelector('.delete-btn').addEventListener('click', () => deleteTemplate(template.id));
+        const copyButton = row.querySelector('.copy-template-btn');
+        if (copyButton) copyButton.addEventListener('click', () => openCopyTemplateModal(template.id));
+        tbody.appendChild(row);
+      });
+
+      const pagination = document.getElementById('template-pagination');
+      pagination.classList.toggle('is-hidden', total <= 800);
+      document.getElementById('template-page-info').textContent = `Seite ${templatePage} von ${templateTotalPages}`;
+      document.getElementById('template-prev-page').disabled = templatePage <= 1;
+      document.getElementById('template-next-page').disabled = templatePage >= templateTotalPages;
     }
-    function updateTemplateSortButtons() { document.querySelectorAll('[data-sort-key]').forEach(button => button.classList.toggle('sort-btn-active', button.dataset.sortKey === templateSortKey && button.dataset.sortDirection === templateSortDirection)); }
-    function handleFilterInput(input) { const field = input.dataset.filterField; const suggestions = input.nextElementSibling; clearTimeout(templateFilterTimers.get(field)); const value = input.value.trim(); if (value.length < 3) { templateFilters[field] = ''; suggestions.classList.add('is-hidden'); templatePage = 1; loadTemplates(); return; } templateFilterTimers.set(field, setTimeout(() => loadSuggestions(field, value, suggestions), 220)); }
-    async function loadSuggestions(field, value, container) { const response = await fetch(`/api/templates/suggestions?field=${encodeURIComponent(field)}&q=${encodeURIComponent(value)}`); const data = await response.json(); container.replaceChildren(); (data.templates || []).forEach(item => { const button = document.createElement('button'); button.type = 'button'; button.className = 'template-suggestion'; button.textContent = item.label || '(leer)'; button.addEventListener('click', () => { document.querySelector(`[data-filter-field="${field}"]`).value = item.label || ''; templateFilters[field] = field === 'name' ? item.label : item.value; container.classList.add('is-hidden'); templatePage = 1; loadTemplates(); }); container.appendChild(button); }); if (!container.children.length) { const empty = document.createElement('span'); empty.className = 'template-suggestion-empty'; empty.textContent = 'Keine Treffer'; container.appendChild(empty); } container.classList.remove('is-hidden'); }
-    function changeTemplatePage(delta) { templatePage = Math.max(1, Math.min(templateTotalPages, templatePage + delta)); loadTemplates(); }
-    function openTemplateModal(template = null) { document.getElementById('template-modal-title').textContent = template ? 'Template bearbeiten' : 'Neues Template'; document.getElementById('template-id').value = template?.id || ''; document.getElementById('template-process-type').value = template?.process_type_id || ''; document.getElementById('template-location').value = template?.location_id || ''; updateTemplateJobOptions(template?.location_id || '', template?.job_id || ''); document.getElementById('template-name').value = template?.name || ''; document.getElementById('template-active').checked = template?.active ?? true; document.getElementById('template-form-message').textContent = ''; document.getElementById('template-modal').classList.remove('is-hidden'); }
-    async function saveTemplate(event) { event.preventDefault(); const id = document.getElementById('template-id').value; const payload = { process_type_id: document.getElementById('template-process-type').value, location_id: document.getElementById('template-location').value, job_id: document.getElementById('template-job').value, name: document.getElementById('template-name').value, active: document.getElementById('template-active').checked }; const response = await fetch(`/api/templates${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await response.json(); if (!data.success) { document.getElementById('template-form-message').textContent = data.message; return; } closeModal('template-modal'); loadTemplates(); }
-    async function deleteTemplate(id) { if (!await window.showDeleteConfirm('Dieses Template wirklich löschen?')) return; const response = await fetch(`/api/templates/${id}`, { method: 'DELETE' }); if (response.ok) loadTemplates(); }
-    async function openCopyTemplateModal(sourceTemplateId) { const select = document.getElementById('copy-target-template'); const submit = document.getElementById('copy-template-submit'); const message = document.getElementById('copy-template-message'); const fallbackTemplates = templates.filter(template => Number(template.id) !== Number(sourceTemplateId) && Number(template.task_count || 0) === 0); select.dataset.sourceTemplateId = sourceTemplateId; message.textContent = ''; document.getElementById('copy-template-modal').classList.remove('is-hidden'); populateCopyTargets(fallbackTemplates, select, submit, message); try { const response = await fetch(`/api/templates/copy-options?exclude_id=${encodeURIComponent(sourceTemplateId)}`); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Ziel-Templates konnten nicht geladen werden.'); populateCopyTargets(data.templates || [], select, submit, message); } catch (error) { if (!fallbackTemplates.length) message.textContent = error.message; } }
-    function populateCopyTargets(targetTemplates, select, submit, message) { select.innerHTML = '<option value="">Bitte auswählen</option>'; targetTemplates.forEach(template => { const option = document.createElement('option'); option.value = template.id; option.textContent = `${template.name} | ${template.process_type_name || 'Kein Prozess'} | ${template.location_name || 'Keine Location'} | ${template.job_name || 'Kein Job'}`; select.appendChild(option); }); select.disabled = targetTemplates.length === 0; submit.disabled = true; if (!targetTemplates.length) message.textContent = 'Keine leeren Templates verfügbar.'; }
-    async function copyTemplateTasks(event) { event.preventDefault(); const select = document.getElementById('copy-target-template'); const sourceTemplateId = select.dataset.sourceTemplateId; const targetTemplateId = select.value; const message = document.getElementById('copy-template-message'); const submit = document.getElementById('copy-template-submit'); if (!sourceTemplateId || !targetTemplateId) { message.textContent = 'Bitte ein Ziel-Template auswählen.'; return; } submit.disabled = true; message.textContent = 'Prozessaufgaben werden kopiert...'; try { const response = await fetch(`/api/templates/${sourceTemplateId}/copy-tasks`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_template_id: targetTemplateId}) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Kopieren fehlgeschlagen.'); closeModal('copy-template-modal'); await loadTemplates(); } catch (error) { message.textContent = error.message; submit.disabled = false; } }
-    function closeModal(id) { document.getElementById(id).classList.add('is-hidden'); }
-    function escapeHtml(value) { const element = document.createElement('span'); element.textContent = value; return element.innerHTML; }
+
+    function updateTemplateSortButtons() {
+      document.querySelectorAll('[data-sort-key]').forEach(button => {
+        button.classList.toggle(
+          'sort-btn-active',
+          button.dataset.sortKey === templateSortKey && button.dataset.sortDirection === templateSortDirection
+        );
+      });
+    }
+
+    function handleFilterInput(input) {
+      const field = input.dataset.filterField;
+      const suggestions = input.nextElementSibling;
+      clearTimeout(templateFilterTimers.get(field));
+      const value = input.value.trim();
+      if (value.length < 3) {
+        templateFilters[field] = '';
+        suggestions.classList.add('is-hidden');
+        templatePage = 1;
+        loadTemplates();
+        return;
+      }
+      templateFilterTimers.set(field, setTimeout(() => loadSuggestions(field, value, suggestions), 220));
+    }
+
+    async function loadSuggestions(field, value, container) {
+      const response = await fetch(`/api/templates/suggestions?field=${encodeURIComponent(field)}&q=${encodeURIComponent(value)}`);
+      const data = await response.json();
+      container.replaceChildren();
+
+      (data.templates || []).forEach(item => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'template-suggestion';
+        button.textContent = item.label || '(leer)';
+        button.addEventListener('click', () => {
+          document.querySelector(`[data-filter-field="${field}"]`).value = item.label || '';
+          templateFilters[field] = field === 'name' ? item.label : item.value;
+          container.classList.add('is-hidden');
+          templatePage = 1;
+          loadTemplates();
+        });
+        container.appendChild(button);
+      });
+
+      if (!container.children.length) {
+        const empty = document.createElement('span');
+        empty.className = 'template-suggestion-empty';
+        empty.textContent = 'Keine Treffer';
+        container.appendChild(empty);
+      }
+      container.classList.remove('is-hidden');
+    }
+
+    function changeTemplatePage(delta) {
+      templatePage = Math.max(1, Math.min(templateTotalPages, templatePage + delta));
+      loadTemplates();
+    }
+
+    function openTemplateModal(template = null) {
+      document.getElementById('template-modal-title').textContent = template ? 'Template bearbeiten' : 'Neues Template';
+      document.getElementById('template-id').value = template?.id || '';
+      document.getElementById('template-process-type').value = template?.process_type_id || '';
+      document.getElementById('template-location').value = template?.location_id || '';
+      updateTemplateJobOptions(template?.location_id || '', template?.job_id || '');
+      document.getElementById('template-name').value = template?.name || '';
+      document.getElementById('template-active').checked = template?.active ?? true;
+      document.getElementById('template-form-message').textContent = '';
+      document.getElementById('template-modal').classList.remove('is-hidden');
+    }
+
+    async function saveTemplate(event) {
+      event.preventDefault();
+      const id = document.getElementById('template-id').value;
+      const payload = {
+        process_type_id: document.getElementById('template-process-type').value,
+        location_id: document.getElementById('template-location').value,
+        job_id: document.getElementById('template-job').value,
+        name: document.getElementById('template-name').value,
+        active: document.getElementById('template-active').checked
+      };
+
+      const response = await fetch(`/api/templates${id ? `/${id}` : ''}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!data.success) {
+        document.getElementById('template-form-message').textContent = data.message;
+        return;
+      }
+      closeModal('template-modal');
+      loadTemplates();
+    }
+
+    async function deleteTemplate(id) {
+      if (!await window.showDeleteConfirm('Dieses Template wirklich löschen?')) return;
+      const response = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+      if (response.ok) loadTemplates();
+    }
+
+    async function openCopyTemplateModal(sourceTemplateId) {
+      const select = document.getElementById('copy-target-template');
+      const submit = document.getElementById('copy-template-submit');
+      const message = document.getElementById('copy-template-message');
+      const fallbackTemplates = templates.filter(template => Number(template.id) !== Number(sourceTemplateId) && Number(template.task_count || 0) === 0);
+
+      select.dataset.sourceTemplateId = sourceTemplateId;
+      message.textContent = '';
+      document.getElementById('copy-template-modal').classList.remove('is-hidden');
+      populateCopyTargets(fallbackTemplates, select, submit, message);
+
+      try {
+        const response = await fetch(`/api/templates/copy-options?exclude_id=${encodeURIComponent(sourceTemplateId)}`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Ziel-Templates konnten nicht geladen werden.');
+        populateCopyTargets(data.templates || [], select, submit, message);
+      } catch (error) {
+        if (!fallbackTemplates.length) message.textContent = error.message;
+      }
+    }
+
+    function populateCopyTargets(targetTemplates, select, submit, message) {
+      select.innerHTML = '<option value="">Bitte auswählen</option>';
+      targetTemplates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.id;
+        option.textContent = `${template.name} | ${template.process_type_name || 'Kein Prozess'} | ${template.location_name || 'Keine Location'} | ${template.job_name || 'Kein Job'}`;
+        select.appendChild(option);
+      });
+      select.disabled = targetTemplates.length === 0;
+      submit.disabled = true;
+      if (!targetTemplates.length) message.textContent = 'Keine leeren Templates verfügbar.';
+    }
+
+    async function copyTemplateTasks(event) {
+      event.preventDefault();
+      const select = document.getElementById('copy-target-template');
+      const sourceTemplateId = select.dataset.sourceTemplateId;
+      const targetTemplateId = select.value;
+      const message = document.getElementById('copy-template-message');
+      const submit = document.getElementById('copy-template-submit');
+
+      if (!sourceTemplateId || !targetTemplateId) {
+        message.textContent = 'Bitte ein Ziel-Template auswählen.';
+        return;
+      }
+      submit.disabled = true;
+      message.textContent = 'Prozessaufgaben werden kopiert...';
+
+      try {
+        const response = await fetch(`/api/templates/${sourceTemplateId}/copy-tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_template_id: targetTemplateId })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Kopieren fehlgeschlagen.');
+        closeModal('copy-template-modal');
+        await loadTemplates();
+      } catch (error) {
+        message.textContent = error.message;
+        submit.disabled = false;
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('is-hidden');
+    }
+
+    function escapeHtml(value) {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
   </script>
 {% endblock %}

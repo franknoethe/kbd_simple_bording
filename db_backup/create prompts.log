@@ -6,9 +6,12 @@ Die class "maincontent" und "sidebar" sollen getrennt scrollbar sein.
 Die sidebar soll einen kleinen Button "<" an erster Stelle im nav haben.
 Mit einem Klick verkleinert sich die sidber auf 150px breite, das div mit den schriften im Brand wird ausgeblendet, die Buttenschrift wird ">",
 die anker werden durch zuerst dem gleichen img url_for('static', filename='icon_test.svg') erstetzt, mit eienem hover wird die Buttonbezeichnungen im bubble dargestellt.
-Mite einem klick auf button ">" extrahiert sich die sidebar wieder und die anker erhalten ihre alten beschriftungen, die images werden ausgeblendet. 
-.
-<!--<img class="nav-icon" src="{{ url_for('static', filename='icon_test.svg') }}" alt="" aria-hidden="true" />-->
+Mit einem klick auf button ">" extrahiert sich die sidebar wieder und die anker erhalten ihre alten beschriftungen, die images werden ausgeblendet. 
+
+formatiere den code in index.html lesbar
+
+Ust die Sidebar hält ihren Zustand vrkleinert oder vergrößert ganz gleich main-content gewählt wurde.
+
 
 **********************************************************
  //* CRUD for locations
