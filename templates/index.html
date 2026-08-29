@@ -172,7 +172,7 @@
 
       body.innerHTML = data.tasks.map(task => {
         const mailBtn = (task.email_template_id !== null && task.email_template_id !== undefined)
-          ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}" title="Vorschau">V</button>`
+          ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}" title="Vorschau">&#9678;</button>`
           : '';
 
         return `<tr>

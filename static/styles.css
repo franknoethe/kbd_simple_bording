@@ -922,8 +922,8 @@ th.th-action {
 }
 
 .preview-btn {
-  color: var(--green);
-  background: var(--green-soft);
+  color: var(--text);
+  background: #edf1f7;
 }
 
 .delete-btn {
