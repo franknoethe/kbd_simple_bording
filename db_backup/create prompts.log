@@ -1,3 +1,23 @@
+Refaktoriere diese Flask-Datei in ein professionelles Flask-Projekt mit Blueprints.
+
+Aktuell befinden sich alle Routen in einer Datei.
+
+Erstelle:
+- auth Blueprint
+- employee Blueprint
+- task Blueprint
+- template Blueprint
+- administration Blueprint
+
+Lagere Datenbankzugriffe in Service-Dateien aus.
+Verändere keine SQL-Anweisungen.
+Verändere keine API-Namen.
+Verändere keine Rückgabeformate.
+
+Erzeuge die komplette neue Verzeichnisstruktur und zeige für jede neue Datei den Inhalt.
+``
+
+
 **********************************************************
  //* Allgemeines Layout
 *********************************************************
