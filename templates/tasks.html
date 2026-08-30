@@ -22,8 +22,28 @@
       <thead>
         <tr>
           <th>
+            <span class="sortable-heading">
+              ID
+              <button class="sort-btn" data-sort="id" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="id" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
+            <div class="task-filter">
+              <input data-field="term" placeholder="Term suchen" autocomplete="off">
+              <button type="button" class="task-filter-clear is-hidden" data-clear="term" title="Suche zurücksetzen" aria-label="Suche zurücksetzen">&times;</button>
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              TERM
+              <button class="sort-btn" data-sort="term" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="term" data-direction="desc" type="button">↓</button>
+            </span>
+          </th>
+          <th>
             <div class="task-filter">
               <input data-field="theme" placeholder="Thema suchen" autocomplete="off">
+              <button type="button" class="task-filter-clear is-hidden" data-clear="theme" title="Suche zurücksetzen" aria-label="Suche zurücksetzen">&times;</button>
               <div class="task-suggestions is-hidden"></div>
             </div>
             <span class="sortable-heading">
@@ -33,15 +53,9 @@
             </span>
           </th>
           <th>
-            <span class="sortable-heading">
-              ID
-              <button class="sort-btn" data-sort="id" data-direction="asc" type="button">↑</button>
-              <button class="sort-btn" data-sort="id" data-direction="desc" type="button">↓</button>
-            </span>
-          </th>
-          <th>
             <div class="task-filter">
               <input data-field="employee" placeholder="Mitarbeiter suchen" autocomplete="off">
+              <button type="button" class="task-filter-clear is-hidden" data-clear="employee" title="Suche zurücksetzen" aria-label="Suche zurücksetzen">&times;</button>
               <div class="task-suggestions is-hidden"></div>
             </div>
             <span class="sortable-heading">
@@ -51,19 +65,11 @@
             </span>
           </th>
           <th>
-            <div class="task-filter">
-              <input data-field="template" placeholder="Vorlage suchen" autocomplete="off">
-              <div class="task-suggestions is-hidden"></div>
-            </div>
             Vorlage
           </th>
           <th>Titel</th>
           <th>Beschreibung</th>
           <th>
-            <div class="task-filter">
-              <input data-field="due_date" placeholder="Fällig suchen" autocomplete="off">
-              <div class="task-suggestions is-hidden"></div>
-            </div>
             <span class="sortable-heading">
               Fällig
               <button class="sort-btn" data-sort="due_date" data-direction="asc" type="button">↑</button>
@@ -78,10 +84,6 @@
             </span>
           </th>
           <th>
-            <div class="task-filter">
-              <input data-field="created_at" placeholder="Erstellt suchen" autocomplete="off">
-              <div class="task-suggestions is-hidden"></div>
-            </div>
             <span class="sortable-heading">
               Erstellt am
               <button class="sort-btn" data-sort="created_at" data-direction="asc" type="button">↑</button>
@@ -93,7 +95,7 @@
       </thead>
       <tbody id="tasks-tbody">
         <tr>
-          <td colspan="10" class="table-message">Lädt...</td>
+          <td colspan="11" class="table-message">Lädt...</td>
         </tr>
       </tbody>
     </table>
@@ -258,30 +260,54 @@
   let taskTotalPages = 1;
   let taskSort = 'due_date';
   let taskDirection = 'asc';
-  const taskFilters = { theme: '', employee: '', template: '', due_date: '', created_at: '' };
+  const taskFilters = { theme: '', term: '', employee: '', template: '', due_date: '', created_at: '' };
 
   document.getElementById('task-page-info').textContent = '';
 
   function renderTasks(taskRows, total) {
     document.getElementById('task-count').textContent = `${total} Aufgaben`;
-    document.getElementById('tasks-tbody').innerHTML = taskRows.length ? taskRows.map(task => `
-      <tr>
-        <td>${escapeHtml(task.theme || '')}</td>
-        <td>${task.id}</td>
-        <td>${escapeHtml(task.employee_name)}</td>
-        <td>${escapeHtml(task.template_task_title)}</td>
-        <td>${escapeHtml(task.title)}</td>
-        <td>${escapeHtml(task.description)}</td>
-        <td>${escapeHtml(task.due_date || '')}</td>
-        <td>${escapeHtml(statuses[task.status] || task.status)}</td>
-        <td>${escapeHtml(task.created_at || '')}</td>
-        <td class="action-btns">
-          <button class="secondary-btn task-edit" data-id="${task.id}" type="button" title="Bearbeiten">E</button>
-          <button class="delete-btn task-delete" data-id="${task.id}" type="button" title="Löschen">L</button>
-          ${task.email_template_id !== null && task.email_template_id !== undefined ? `<button class="preview-btn task-mail" data-id="${task.id}" type="button" title="Mail">&#9678;</button>` : ''}
-        </td>
-      </tr>
-    `).join('') : '<tr><td colspan="10" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+    const tbody = document.getElementById('tasks-tbody');
+
+    if (!taskRows.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+      return;
+    }
+
+    let colorIndex = -1;
+    let previousTerm = null;
+    const rowsHtml = [];
+    taskRows.forEach(task => {
+      const termKey = String(task.term || '');
+      if (termKey !== previousTerm) {
+        colorIndex += 1;
+        previousTerm = termKey;
+        const containerClass = `task-group-container-${colorIndex % 2}`;
+        rowsHtml.push(`<tr><th colspan="11"><div class="task-group-container ${containerClass}">Term: ${escapeHtml(task.term || 'Nicht zugeordnet')}</div></th></tr>`);
+      }
+      const rowClass = `task-group-row-${colorIndex % 2}`;
+      rowsHtml.push(`
+          <tr class="${rowClass}">
+            <td>${task.id}</td>
+            <td>${escapeHtml(task.term || '')}</td>
+            <td>${escapeHtml(task.theme || '')}</td>
+            <td>${escapeHtml(task.employee_name)}</td>
+            <td>${escapeHtml(task.template_task_title)}</td>
+            <td>${escapeHtml(task.title)}</td>
+            <td>${escapeHtml(task.description)}</td>
+            <td>${escapeHtml(task.due_date || '')}</td>
+            <td>${escapeHtml(statuses[task.status] || task.status)}</td>
+            <td>${escapeHtml(task.created_at || '')}</td>
+            <td>
+              <div class="action-btns">
+                ${task.email_template_id !== null && task.email_template_id !== undefined ? `<button class="preview-btn task-mail" data-id="${task.id}" type="button" title="Mail">&#9678;</button>` : ''}
+                <button class="secondary-btn task-edit" data-id="${task.id}" type="button" title="Bearbeiten">E</button>
+                <button class="delete-btn task-delete" data-id="${task.id}" type="button" title="Löschen">-</button>
+              </div>
+            </td>
+          </tr>
+        `);
+    });
+    tbody.innerHTML = rowsHtml.join('');
 
     document.querySelectorAll('.task-edit').forEach(button => {
       button.addEventListener('click', () => openEditTask(taskRows.find(task => String(task.id) === button.dataset.id)));
@@ -367,7 +393,9 @@
 
   async function loadSuggestions(input) {
     const value = input.value.trim();
-    const container = input.nextElementSibling;
+    const container = input.parentElement.querySelector('.task-suggestions');
+    const clearButton = input.parentElement.querySelector('.task-filter-clear');
+    clearButton.classList.toggle('is-hidden', !value);
 
     if (value.length < 3) {
       taskFilters[input.dataset.field] = '';
@@ -395,6 +423,16 @@
     });
   }
 
+  function clearTaskFilter(field) {
+    const input = document.querySelector(`.task-filter input[data-field="${field}"]`);
+    input.value = '';
+    input.parentElement.querySelector('.task-filter-clear').classList.add('is-hidden');
+    input.parentElement.querySelector('.task-suggestions').classList.add('is-hidden');
+    taskFilters[field] = '';
+    taskPage = 1;
+    loadTasks();
+  }
+
   async function openTaskMail(taskId) {
     const response = await fetch(`/api/tasks/${taskId}/email-preview`);
     const data = await response.json();
@@ -404,8 +442,13 @@
     }
     const template = data.email_template;
     document.getElementById('task-mail-title').textContent = `E-Mail-Vorschau: ${template.subject || template.task_title || ''}`;
-    document.getElementById('task-mail-html').srcdoc = template.body_html || '';
-    document.getElementById('task-mail-text').textContent = template.body_text || '';
+    const hasHtml = Boolean(template.body_html);
+    const htmlFrame = document.getElementById('task-mail-html');
+    const textPre = document.getElementById('task-mail-text');
+    htmlFrame.srcdoc = template.body_html || '';
+    textPre.textContent = template.body_text || '';
+    htmlFrame.classList.toggle('is-hidden', !hasHtml);
+    textPre.classList.toggle('is-hidden', hasHtml);
     document.getElementById('task-mail-modal').classList.remove('is-hidden');
   }
 
@@ -430,6 +473,10 @@
 
   document.querySelectorAll('.task-filter input').forEach(input => {
     input.addEventListener('input', () => loadSuggestions(input));
+  });
+
+  document.querySelectorAll('.task-filter-clear').forEach(button => {
+    button.addEventListener('click', () => clearTaskFilter(button.dataset.clear));
   });
 
   document.getElementById('task-prev').addEventListener('click', () => {

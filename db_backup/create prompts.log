@@ -126,7 +126,6 @@ Ich möchte die Tabelle in der Spalte ID, STEP und VORLAGE nach einem klick hint
 Die Datenfelder von tamplate_id->templates_id, responsible_function_id->employee.id und emai-_template_id->email_templates_id werden jeweils aufgelöst dargestellt.
 Bei einer Datenmenge von > 800 Zeilen sollen unterhalb der Tabelle eine Zusatzzeile mit Buttons weiter "→" und zurück "←" das nächste oder vorherige Datenpaket angezeigt werden.
 
-*********************************************************
 Oberhalb der Prozessaufgabenliste soll ein Filter mit folgenden comboboxen und Inhalten erstellt werden:
 Prozess -> tamplates.process_type_id, Location ->templates.location_id, Name-> templates.job_id
 Ein Button "Filtern" am ende der Comboxreihe erstellt die Templateliste unter berücksichtigung der Combobox-Einträge
@@ -140,6 +139,11 @@ Bei der Anlage von Neue Prozessaufgabe soll Eingabefenster keine Combobox zur Au
 Bei der Anlage von Neue Prozessaufgabe wird ein zusätliches Item der Combobox EMAIL nach oben mit dem Wert "Keine" der bestehenden Auswahl hinzugefügt.
 
 Jede VORLAGE soll in der Prozessaufgabenliste optisch durch Kontainer <div> getrennt werden. Die Kontainer erhalten eine eigene Hintergrundfarbe.
+
+Zurück zu den template_tasks. In den Funktionen Neue Prozessaufgabe und Bearbeiten soll in der Combobox VERANTWORTLICH nur Were aller functions.name aufgelistet werden.
+Beim speichern wird die gewählte functions.id in template_tasks.responsible_function_id eingetragen
+ 
+
 
 **********************************************************
  //* Login
@@ -181,7 +185,6 @@ Der Titel und die Beschreibung der Aufgabe werden aus den Feldern subject und bo
 Jeder Mitarbeiter soll in seinem Dashboard eine Übersicht über seine Aufgaben sehen, die nach Fälligkeitsdatum sortiert ist.
 Jeder Mitarbeiter kann den Status seiner Aufgaben auf "Offen" oder "in Bearbeitung" oder "erledigt" setzen.
 
-*********************************************************
 Widmen wir uns wieder den tasks Aufgebenliste.
 Ändere die Tabelle tasks Aufgabenliste Als CRUD Seite mit eigenem Editierfenster wie in den anderen Ansichten auch.
 Ich möchte die Tabelle in der Spalte ID, MITARBEITER, TITEL, FÄLLIG; STATUS und ERSTELLT AM nach einem klick hinter den Spaltennamen auf einen Button mit der Beschrifung "↑" und "↓", ASC und DESC sortieren lassen.
@@ -216,6 +219,30 @@ Beim Speichern mit Zuweisen wird tasks.employee_id dem Wert der Combobox "Aufgab
 Im Container "task-add-singlejob" wird in Combobox "Aufgabe für" eine Liste aller employees erstellt.
 
 Speichern mit Zuweisen und task-mode-toggle "on" wird tasks.employee_id dem Wert aus der Tabelle tamplate_tasks.responsible_function_id zugewiesen.
+
+Aufgabenliste erscheint nur in den Spalte THEMA und MITARBEITER über der jeweiligen Spaltenüberschrift ein Textfeld. Nach dem Eintrag des dritten Zeichens im Textfeld wird ein <div> angezeigt mit den ersten 10 gefundenen Datensätze aus dem der Benutzer einen wählt. Nach einem klick wird die Aufgabenliste ausschließlich mit den Datensätzen der gewählten Suchanfrage gefüllt.
+Jeder MITARBEITER soll in der Aufgabenliste optisch durch Kontainer <div> getrennt werden. Die Kontainer erhalten eine eigene Hintergrundfarbe. Nutze nur zwei Hintergrundfarben im Wechsel.
+
+Ergänze das Fenster Aufgaben zuweisen in task-add-via-template und task-add-singlejob mit einer Combobox "Standort" in dem alle locations.name zur Auswahl gelistet werden.
+
+Speichern mit Zuweisen und task-mode-toggle "on":
+schaue welche Location_id der Mitarbeiter besitzt
+schaue in der employees unter der location_id wer eine function_id besitzt
+tasks.employee_id = employees.id mit der function aus template_tasks.responsible_function_id
+Ändere task.created_at Format Date anstatt Datetime
+
+Jeder MITARBEITER soll in der Aufgabenliste optisch durch Kontainer <div> getrennt werden. Die Kontainer erhalten eine eigene Hintergrundfarbe. Nutze nur zwei Hintergrundfarben im Wechsel.
+
+In der tasks E-Mail-Vorschau wird entweder task-mail-html oder task-mail-text abhängig von den einträgen in email_template_id angezeigt.
+
+Speichern mit Zuweisen und task-mode-toggle "on": schaue in templates welche process_type_id die gewählte Vorlage besitz und und trage ins die tasks.term = "templates.process_type_id(aufgelöst) | Combobox.Vorlage.text | Combobox.Mitarbeiter.text" ein
+
+Aus den Feldern des entsprechen email_templates.body_text oder email_templates.body_html werden die Schlüsselwörter ersetzt: 
+[NEWBIE]=employee.id->emplyees.first_name " " employees.last_name, 
+[RESPONSIBLE], 
+[JOB] , 
+[STARTDATE] tasks.due_date, 
+[LOCATION]
 
 
 **********************************************************

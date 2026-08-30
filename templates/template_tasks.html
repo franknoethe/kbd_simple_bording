@@ -141,7 +141,7 @@
     let taskSortKey = 'id';
     let taskSortDirection = 'asc';
     let selectedTemplateId = new URLSearchParams(window.location.search).get('template_id') || null;
-    let taskOptions = { templates: [], employees: [], email_templates: [] };
+    let taskOptions = { templates: [], functions: [], email_templates: [] };
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadTaskOptions();
@@ -161,7 +161,6 @@
           loadTasks();
         });
       });
-      document.getElementById('task-template').addEventListener('change', () => updateResponsibleOptions());
       document.getElementById('template-task-template-filter').addEventListener('input', handleTemplateFilterInput);
       document.addEventListener('click', handleOutsideTemplateSuggestionsClick);
     });
@@ -172,7 +171,7 @@
       if (!data.success) throw new Error(data.message || 'Optionen konnten nicht geladen werden.');
       taskOptions = data;
       fillSelect('task-template', data.templates, item => item.name);
-      updateResponsibleOptions();
+      fillSelect('task-responsible', data.functions, item => item.name);
       fillSelect('task-email', data.email_templates, item => `${item.name}${item.subject ? ` - ${item.subject}` : ''}`, true);
     }
 
@@ -191,15 +190,6 @@
         option.textContent = labeler(item);
         select.appendChild(option);
       });
-    }
-
-    function updateResponsibleOptions(selectedEmployeeId = '') {
-      const template = taskOptions.templates.find(item => String(item.id) === String(document.getElementById('task-template').value));
-      const employees = template ? taskOptions.employees.filter(item => String(item.location_id) === String(template.location_id)) : [];
-      fillSelect('task-responsible', employees, item => `${item.name} | ${item.function_name || 'Keine Funktion'}`);
-      if (selectedEmployeeId && employees.some(item => String(item.id) === String(selectedEmployeeId))) {
-        document.getElementById('task-responsible').value = String(selectedEmployeeId);
-      }
     }
 
     async function loadTasks() {
@@ -307,9 +297,11 @@
             <td>${escapeHtml(task.responsible_name || '')}</td>
             <td>${escapeHtml(task.email_template_name || '')}</td>
             <td>${task.mandatory ? 'Ja' : 'Nein'}</td>
-            <td class="action-btns">
-              <button class="edit-btn" type="button" title="Bearbeiten">E</button>
-              <button class="delete-btn" type="button" title="Löschen">-</button>
+            <td>
+              <div class="action-btns">
+                <button class="edit-btn" type="button" title="Bearbeiten">E</button>
+                <button class="delete-btn" type="button" title="Löschen">-</button>
+              </div>
             </td>
           `;
           row.querySelector('.edit-btn').addEventListener('click', () => openTaskModal(task));
@@ -342,7 +334,7 @@
       document.getElementById('task-id').value = task?.id || '';
       document.getElementById('task-step').value = task?.step ?? '';
       document.getElementById('task-template').value = task?.template_id || '';
-      updateResponsibleOptions(task?.responsible_function_id || '');
+      document.getElementById('task-responsible').value = task?.responsible_function_id || '';
       document.getElementById('task-title').value = task?.title || '';
       document.getElementById('task-description').value = task?.description || '';
       document.getElementById('task-due').value = task?.due_offset_days ?? 0;

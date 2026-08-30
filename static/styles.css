@@ -889,9 +889,39 @@ th.th-action {
 .template-task-row-2 { background: #fffaf1; }
 .template-task-row-3 { background: #fbf7fd; }
 
+.task-group-container {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+}
+
+.task-group-container-0 { background: #e8f1ff; }
+.task-group-container-1 { background: #eaf7ef; }
+.task-group-row-0 { background: #f6f9ff; }
+.task-group-row-1 { background: #f7fcf8; }
+
 .task-filter { position: relative; min-width: 140px; margin-bottom: 7px; }
-.task-filter input { width: 100%; min-height: 32px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 7px; font: inherit; font-size: 12px; }
+.task-filter input { width: 100%; min-height: 32px; padding: 6px 26px 6px 8px; border: 1px solid var(--border); border-radius: 7px; font: inherit; font-size: 12px; }
 .task-filter input:focus { outline: 3px solid var(--primary-soft); border-color: var(--primary); }
+.task-filter-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.task-filter-clear:hover { background: var(--red-soft); color: var(--red); }
 .task-suggestions { position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 30; overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: var(--panel); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14); }
 .task-suggestion, .task-suggestion-empty { display: block; width: 100%; padding: 8px 10px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 12px; text-align: left; }
 .task-suggestion { cursor: pointer; }

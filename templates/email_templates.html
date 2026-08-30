@@ -234,10 +234,12 @@
               ${template.active ? 'Aktiv' : 'Inaktiv'}
             </span>
           </td>
-          <td class="action-btns">
-            <button class="preview-btn" type="button" title="Vorschau">&#9678;</button>
-            <button class="edit-btn" type="button" title="Bearbeiten">E</button>
-            <button class="delete-btn" type="button" title="Löschen">-</button>
+          <td>
+            <div class="action-btns">
+              <button class="preview-btn" type="button" title="Vorschau">&#9678;</button>
+              <button class="edit-btn" type="button" title="Bearbeiten">E</button>
+              <button class="delete-btn" type="button" title="Löschen">-</button>
+            </div>
           </td>
         `;
         row.querySelector('.edit-btn').addEventListener('click', () => openTemplateModal(template));

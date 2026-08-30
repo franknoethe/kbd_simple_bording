@@ -168,8 +168,8 @@ def task_payload(row):
     item = dict(row)
     if isinstance(item.get('due_date'), (date, datetime)):
         item['due_date'] = item['due_date'].isoformat()
-    if isinstance(item.get('created_at'), datetime):
-        item['created_at'] = item['created_at'].isoformat(sep=' ', timespec='seconds')
+    if isinstance(item.get('created_at'), (date, datetime)):
+        item['created_at'] = item['created_at'].isoformat()[:10]
     item['status_label'] = TASK_STATUSES.get(item.get('status'), item.get('status', ''))
     return item
 
@@ -210,10 +210,13 @@ def task_options():
             ORDER BY last_name, first_name
         ''')
         all_employees = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM locations WHERE active = TRUE ORDER BY name')
+        locations = cursor.fetchall()
         return jsonify({'success': True, 'employees': [dict(row) for row in employees],
                         'templates': [dict(row) for row in templates],
                 'email_templates': [dict(row) for row in email_templates],
                 'all_employees': [dict(row) for row in all_employees],
+                'locations': [dict(row) for row in locations],
                         'statuses': TASK_STATUSES})
     except Error as error:
         return jsonify({'success': False, 'message': f'Database error: {error}'}), 500
@@ -237,6 +240,7 @@ def get_tasks():
             employee_id = session['user']['id']
         filters = {
             'theme': request.args.get('theme', '').strip(),
+            'term': request.args.get('term', '').strip(),
             'employee': request.args.get('employee', '').strip(),
             'template': request.args.get('template', '').strip(),
             'due_date': request.args.get('due_date', '').strip(),
@@ -247,12 +251,18 @@ def get_tasks():
         if employee_id:
             where_parts.append('t.employee_id = %s')
             values.append(employee_id)
-        if len(filters['theme']) >= 3:
+        if filters['theme']:
             where_parts.append('t.theme LIKE %s')
             values.append(f"%{filters['theme']}%")
-        if len(filters['employee']) >= 3:
-            where_parts.append("CONCAT_WS(' ', e.first_name, e.last_name) LIKE %s")
-            values.append(f"%{filters['employee']}%")
+        if filters['term']:
+            where_parts.append('t.term LIKE %s')
+            values.append(f"%{filters['term']}%")
+        if filters['employee']:
+            try:
+                where_parts.append('t.employee_id = %s')
+                values.append(int(filters['employee']))
+            except ValueError:
+                where_parts.append('1 = 0')
         if len(filters['template']) >= 3:
             where_parts.append('tt.title LIKE %s')
             values.append(f"%{filters['template']}%")
@@ -264,7 +274,7 @@ def get_tasks():
             values.append(f"%{filters['created_at']}%")
         where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ''
         sort_columns = {
-            'theme': 't.theme', 'id': 't.id', 'employee': 'employee_name', 'title': 't.title',
+            'theme': 't.theme', 'id': 't.id', 'term': 't.term', 'employee': 'employee_name', 'title': 't.title',
             'due_date': 't.due_date', 'status': 't.status', 'created_at': 't.created_at',
         }
         sort_column = sort_columns.get(request.args.get('sort', 'due_date'), 't.due_date')
@@ -283,7 +293,7 @@ def get_tasks():
         page = min(page, total_pages)
         values.extend([page_size, (page - 1) * page_size])
         cursor.execute(f"""
-                 SELECT t.id, t.theme, t.employee_id, t.template_task_id, t.email_template_id,
+                 SELECT t.id, t.theme, t.term, t.employee_id, t.template_task_id, t.email_template_id,
                      t.title, t.description,
                    t.due_date, t.status, t.created_at,
                    CONCAT_WS(' ', e.first_name, e.last_name) AS employee_name,
@@ -309,7 +319,7 @@ def get_tasks():
 def task_suggestions():
     field = request.args.get('field', '')
     query = request.args.get('q', '').strip()
-    if field not in {'theme', 'employee', 'template', 'due_date', 'created_at'} or len(query) < 3:
+    if field not in {'theme', 'term', 'employee', 'template', 'due_date', 'created_at'} or len(query) < 3:
         return jsonify({'success': True, 'suggestions': []})
     connection = get_db_connection()
     if not connection:
@@ -320,6 +330,9 @@ def task_suggestions():
         if field == 'theme':
             sql = """SELECT DISTINCT t.theme AS value, t.theme AS label
                 FROM tasks t WHERE t.theme LIKE %s ORDER BY label LIMIT 10"""
+        elif field == 'term':
+            sql = """SELECT DISTINCT t.term AS value, t.term AS label
+                FROM tasks t WHERE t.term LIKE %s ORDER BY label LIMIT 10"""
         elif field == 'employee':
             sql = """SELECT DISTINCT e.id AS value,
                 CONCAT_WS(' ', e.first_name, e.last_name) AS label
@@ -362,7 +375,7 @@ def assign_tasks():
     try:
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
-            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name
+            SELECT id, CONCAT_WS(' ', first_name, last_name) AS name, location_id
             FROM employees WHERE id = %s
         ''', (employee_id,))
         employee = cursor.fetchone()
@@ -372,9 +385,9 @@ def assign_tasks():
             SELECT template_tasks.id, template_tasks.title, template_tasks.description,
                    template_tasks.due_offset_days, template_tasks.email_template_id,
                    template_tasks.responsible_function_id,
-                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS responsible_name
+                   COALESCE(functions.name, '') AS responsible_name
             FROM template_tasks
-            LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
+            LEFT JOIN functions ON functions.id = template_tasks.responsible_function_id
             WHERE template_tasks.template_id = %s
             ORDER BY template_tasks.step, template_tasks.id
         ''', (template_id,))
@@ -383,13 +396,48 @@ def assign_tasks():
             return jsonify({'success': False, 'message': 'Die Vorlage enthält keine Aufgaben.'}), 400
         if any(task['responsible_function_id'] is None for task in template_tasks):
             return jsonify({'success': False, 'message': 'Alle Vorlagenaufgaben benötigen einen Verantwortlichen.'}), 400
+
+        function_ids = list({task['responsible_function_id'] for task in template_tasks})
+        placeholders = ', '.join(['%s'] * len(function_ids))
+        cursor.execute(f'''
+            SELECT id, function_id
+            FROM employees
+            WHERE location_id = %s AND function_id IN ({placeholders})
+        ''', (employee['location_id'], *function_ids))
+        responsible_employee_by_function = {}
+        for row in cursor.fetchall():
+            responsible_employee_by_function.setdefault(row['function_id'], row['id'])
+
+        missing_functions = sorted({
+            task['responsible_name'] or str(task['responsible_function_id'])
+            for task in template_tasks
+            if task['responsible_function_id'] not in responsible_employee_by_function
+        })
+        if missing_functions:
+            return jsonify({'success': False, 'message':
+                f"Am Standort des Mitarbeiters fehlt ein Mitarbeiter mit folgender Funktion: {', '.join(missing_functions)}"}), 400
+
+        cursor.execute('''
+            SELECT templates.name AS template_name, process_types.name AS process_type_name
+            FROM templates
+            LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            WHERE templates.id = %s
+        ''', (template_id,))
+        template_info = cursor.fetchone() or {}
+        task_term = ' | '.join([
+            template_info.get('process_type_name') or '',
+            template_info.get('template_name') or '',
+            employee['name'] or '',
+        ])
+
         for template_task in template_tasks:
             due_date = entry_date + timedelta(days=int(template_task['due_offset_days'] or 0))
+            responsible_employee_id = responsible_employee_by_function[template_task['responsible_function_id']]
             cursor.execute('''
                                 INSERT INTO tasks
-                                    (theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
-                                VALUES (%s, %s, %s, %s, %s, %s, 'open', %s)
-                            ''', (template_task['responsible_name'], template_task['responsible_function_id'], template_task['id'], template_task['title'],
+                                    (term, theme, employee_id, template_task_id, title, description, due_date, status, email_template_id)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, 'open', %s)
+                            ''', (task_term, template_task['responsible_name'], responsible_employee_id, template_task['id'], template_task['title'],
                                   template_task['description'], due_date, template_task['email_template_id']))
         connection.commit()
         return jsonify({'success': True, 'created': len(template_tasks)}), 201
@@ -781,21 +829,14 @@ def get_template_task_options():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute('SELECT id, name, location_id FROM templates ORDER BY name ASC')
         templates = cursor.fetchall()
-        cursor.execute('''
-            SELECT employees.id, employees.location_id, employees.function_id,
-                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS name,
-                   COALESCE(functions.name, '') AS function_name
-            FROM employees
-            LEFT JOIN functions ON functions.id = employees.function_id
-            ORDER BY last_name ASC, first_name ASC
-        ''')
-        employees = cursor.fetchall()
+        cursor.execute('SELECT id, name FROM functions ORDER BY name ASC')
+        functions = cursor.fetchall()
         cursor.execute('SELECT id, name, subject FROM email_templates ORDER BY name ASC')
         email_templates = cursor.fetchall()
         return jsonify({
             'success': True,
             'templates': [dict(item) for item in templates],
-            'employees': [dict(item) for item in employees],
+            'functions': [dict(item) for item in functions],
             'email_templates': [dict(item) for item in email_templates],
         })
     except Error as error:
@@ -820,7 +861,7 @@ def get_template_tasks():
         'title': 'template_tasks.title',
         'description': 'template_tasks.description',
         'due_offset_days': 'template_tasks.due_offset_days',
-        'responsible_function_id': 'employees.last_name',
+        'responsible_function_id': 'functions.name',
         'email_template_id': 'email_templates.name',
         'mandatory': 'template_tasks.mandatory',
     }
@@ -836,7 +877,7 @@ def get_template_tasks():
         joins = '''
             FROM template_tasks
             LEFT JOIN templates ON templates.id = template_tasks.template_id
-            LEFT JOIN employees ON employees.id = template_tasks.responsible_function_id
+            LEFT JOIN functions ON functions.id = template_tasks.responsible_function_id
             LEFT JOIN email_templates ON email_templates.id = template_tasks.email_template_id
         '''
         template_id = request.args.get('template_id', type=int)
@@ -865,7 +906,7 @@ def get_template_tasks():
                    templates.name AS template_name, template_tasks.title,
                    template_tasks.description, template_tasks.due_offset_days,
                    template_tasks.responsible_function_id,
-                   CONCAT_WS(' ', employees.first_name, employees.last_name) AS responsible_name,
+                   COALESCE(functions.name, '') AS responsible_name,
                    template_tasks.email_template_id,
                    email_templates.name AS email_template_name,
                    template_tasks.mandatory

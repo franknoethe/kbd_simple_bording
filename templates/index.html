@@ -181,11 +181,13 @@
           <td>${dashboardEscape(task.description)}</td>
           <td>${dashboardEscape(task.due_date)}</td>
           <td>${dashboardStatuses[task.status] || task.status}</td>
-          <td class="action-btns">
-            ${mailBtn}
-            <button type="button" class="status-btn ${dashboardStatusColorClass(task)} dashboard-task-status-btn" data-id="${task.id}" title="Status ändern">
-              ${dashboardStatuses[task.status] || task.status}
-            </button>
+          <td>
+            <div class="action-btns">
+              ${mailBtn}
+              <button type="button" class="status-btn ${dashboardStatusColorClass(task)} dashboard-task-status-btn" data-id="${task.id}" title="Status ändern">
+                ${dashboardStatuses[task.status] || task.status}
+              </button>
+            </div>
           </td>
         </tr>`;
       }).join('');

@@ -283,11 +283,13 @@
               ${template.active ? 'Aktiv' : 'Inaktiv'}
             </span>
           </td>
-          <td class="action-btns">
-            <a class="secondary-btn" href="/template-tasks?template_id=${encodeURIComponent(template.id)}">${taskCount} - Aufgaben</a>
-            ${taskCount > 0 ? '<button class="secondary-btn copy-template-btn" type="button" title="Kopieren">&#10697;</button>' : ''}
-            <button class="edit-btn" type="button" title="Bearbeiten">E</button>
-            <button class="delete-btn" type="button" title="Löschen">-</button>
+          <td>
+            <div class="action-btns">
+              <a class="secondary-btn" href="/template-tasks?template_id=${encodeURIComponent(template.id)}">${taskCount} - Aufgaben</a>
+              ${taskCount > 0 ? '<button class="secondary-btn copy-template-btn" type="button" title="Kopieren">&#10697;</button>' : ''}
+              <button class="edit-btn" type="button" title="Bearbeiten">E</button>
+              <button class="delete-btn" type="button" title="Löschen">-</button>
+            </div>
           </td>
         `;
         row.querySelector('.edit-btn').addEventListener('click', () => openTemplateModal(template));
