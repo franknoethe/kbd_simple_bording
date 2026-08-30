@@ -18,14 +18,14 @@ def send_reminders():
     try:
         cursor = connection.cursor(cursor=DictCursor)
         cursor.execute('''
-            SELECT t.id, t.title, t.description, e.email,
+            SELECT t.id, t.title, t.description, e.email_business AS email,
                    et.subject, et.body_html, et.body_text
             FROM tasks t
             JOIN employees e ON e.id = t.employee_id
             JOIN template_tasks tt ON tt.id = t.template_task_id
             LEFT JOIN email_templates et ON et.id = tt.email_template_id
-            WHERE t.due_date <= %s AND t.status <> 'completed'
-              AND t.reminder_sent_at IS NULL AND e.email IS NOT NULL
+            WHERE t.due_date = %s AND t.status <> 'completed'
+              AND t.reminder_sent_at IS NULL AND e.email_business IS NOT NULL
         ''', (date.today(),))
         due_tasks = cursor.fetchall()
         smtp_host = os.environ.get('KBD_SMTP_HOST')

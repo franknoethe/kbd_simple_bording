@@ -268,3 +268,9 @@ Dashboard Kanditaenübersicht DEPARTMENT = employees.department.
 
 setze icon_test vor dem Button Rollen
 
+
+**********************************************************
+ //* Cronjob
+**********************************************************
+erstelle einen cronjob um emails mit tasks.due_date=heute mit den werten aus tasks.template_task_id -> template_tasks.email_template_id -> email_templates.subject und email_templates.body_text
+
