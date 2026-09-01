@@ -273,16 +273,19 @@ Speichern mit Zuweisen und task-mode-toggle "on": schaue in templates welche pro
 
 Speichern mit Zuweisen und task-mode-toggle "on": ist die function aus template_tasks.responsible_function_id = Newbie wird tasks.employee_id = combobox.Mitarbeiter.id
 
+Speichern mit Zuweisen und task-mode-toggle "on" wird den Feldern task.title und tasks.descripteion das entsprechende Schlüsselwort ersetzt: 
+[NEWBIE]=tasks.employee_id -> emplyees.first_name " " employees.last_name, 
+[JOB]=tasks.template_tasks_id -> templates.id -> job_id(Aufgelöst), 
+[STARTDATE] tasks.employee_id -> employees.start_date und
+[LOCATION]=tasks.template_tasks_id -> templates.id -> locatin_id(Aufgelöst)
+
+Spalte MITARBEIER und VORLAGE in Aufgabenliste erhaält einen kleinen Button "<". 
+Mit einem Klick verkleinert sich die Spalte auf 20px, die Zeileninhalte werden nicht mehr angezeigt, und die Buttonbeschriftung ändert sich auf ">". 
+Mit einem KLickch auf dem Button ">" extrahiert sich die Spalte, erhält wieder die Beschriftung und die Buttonbeschriftung ändert sich auf ">"
+im verkleinerten Zustand erhält der Hintergrund der Spalte in den Zeilen die Farbe var(--bg).
+dem Aufruf der Seite werden die Spalten klein angezeigt
 
 
-
-
-Aus den Feldern des entsprechen email_templates.body_text oder email_templates.body_html werden die Schlüsselwörter ersetzt: 
-[NEWBIE]=employee.id->emplyees.first_name " " employees.last_name, 
-[RESPONSIBLE], 
-[JOB] , 
-[STARTDATE] tasks.due_date, 
-[LOCATION]
 
 
 **********************************************************
@@ -306,7 +309,16 @@ Dashboard Kanditaenübersicht genauso nur mit Daten aus tasks. Department bleibt
 Dashboard Kanditatenübersicht Spalte START DATE = process_cases.start_date
 Dashboard Kanditaenübersicht DEPARTMENT = employees.department.
 
-setze icon_test vor dem Button Rollen
+Jedsr task im Dashboard meine Aufgaben wird in einem optisch getrennten div dargestellt.
+<div class="my-task-main"> 
+    <div class="my-task-theme">tasks.theme</div>
+    <div class="my-task-description">
+        <div class="my-task-description-header">tasks.title & " " & tasks.due_date</div>
+        <div class="my-task-description-description">tasks.description</div>
+    </div>
+    <div class="my-task-status">tasks.status</div>(stauts wird in einem kreis mit dem buchstaben und der flächenfarbe, status=open -> var(--kbd-hellgrue)), status=in_progress -> var(--kbd-orange-soft)), tasks_duedate<heute -> var(--red))
+    <div class="my-task-actions">füge hier die buttons aus der Spalte Aktionen ein</div>
+</div>
 
 
 **********************************************************

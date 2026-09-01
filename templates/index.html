@@ -103,28 +103,12 @@
   </section>
 
   <section class="panel dashboard-tasks">
-    <div class="panel-header">
+    <div class="panel-header dashboard-tasks">
       <h2>Meine Aufgaben</h2>
       <span id="dashboard-task-count">Lädt...</span>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>THEMA</th>
-            <th>Titel</th>
-            <th>Beschreibung</th>
-            <th>Fällig</th>
-            <th>Status</th>
-            <th class="th-action">AKTIONEN</th>
-          </tr>
-        </thead>
-        <tbody id="dashboard-tasks-tbody">
-          <tr>
-            <td colspan="6" class="table-message">Lädt...</td>
-          </tr>
-        </tbody>
-      </table>
+    <div id="dashboard-tasks-list" class="dashboard-task-list">
+      <div class="table-message">Lädt...</div>
     </div>
   </section>
 
@@ -143,22 +127,28 @@
       completed: 'F'
     };
 
+    const dashboardStatusLabels = {
+      open: 'Offen',
+      in_progress: 'In Bearbeitung',
+      completed: 'Fertig'
+    };
+
     const today = new Date().toISOString().slice(0, 10);
     let dashboardTasks = [];
 
     function dashboardStatusColorClass(task) {
-      if (task.due_date && task.due_date < today) return 'status-btn-red';
-      if (task.status === 'in_progress') return 'status-btn-yellow';
-      return 'status-btn-green';
+      if (task.due_date && task.due_date < today) return 'status-red';
+      if (task.status === 'in_progress') return 'status-orange';
+      return 'status-green';
     }
 
     async function loadDashboardTasks() {
       const response = await fetch('/api/tasks?employee_id={{ session["user"]["id"] }}');
       const data = await response.json();
-      const body = document.getElementById('dashboard-tasks-tbody');
+      const list = document.getElementById('dashboard-tasks-list');
 
       if (!data.success) {
-        body.innerHTML = `<tr><td colspan="6" class="table-message table-message-error">${dashboardEscape(data.message)}</td></tr>`;
+        list.innerHTML = `<div class="table-message table-message-error">${dashboardEscape(data.message)}</div>`;
         return;
       }
 
@@ -166,30 +156,33 @@
       document.getElementById('dashboard-task-count').textContent = `${data.tasks.length} Aufgaben`;
 
       if (!data.tasks.length) {
-        body.innerHTML = '<tr><td colspan="6" class="table-message">Keine Aufgaben vorhanden.</td></tr>';
+        list.innerHTML = '<div class="table-message">Keine Aufgaben vorhanden.</div>';
         return;
       }
 
-      body.innerHTML = data.tasks.map(task => {
+      list.innerHTML = data.tasks.map(task => {
+        const statusLetter = dashboardStatuses[task.status] || task.status?.slice(0, 1).toUpperCase() || 'O';
         const mailBtn = (task.email_template_id !== null && task.email_template_id !== undefined)
-          ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}" title="Vorschau">&#9678;</button>`
+          ? `<button type="button" class="preview-btn dashboard-task-mail" data-id="${task.id}" title="E-Mail-Vorschau">Mail</button>`
           : '';
+        const statusClass = dashboardStatusColorClass(task);
 
-        return `<tr>
-          <td>${dashboardEscape(task.theme)}</td>
-          <td>${dashboardEscape(task.title)}</td>
-          <td>${dashboardEscape(task.description)}</td>
-          <td>${dashboardEscape(task.due_date)}</td>
-          <td>${dashboardStatuses[task.status] || task.status}</td>
-          <td>
-            <div class="action-btns">
-              ${mailBtn}
-              <button type="button" class="status-btn ${dashboardStatusColorClass(task)} dashboard-task-status-btn" data-id="${task.id}" title="Status ändern">
-                ${dashboardStatuses[task.status] || task.status}
-              </button>
+        return `
+          <div class="my-task-main">
+            <div class="my-task-theme">${dashboardEscape(task.theme || '-')}</div>
+            <div class="my-task-description">
+              <div class="my-task-description-header">${dashboardEscape(task.title || '-')} ${dashboardEscape(task.due_date || '')}</div>
+              <div class="my-task-description-description">${dashboardEscape(task.description || '')}</div>
             </div>
-          </td>
-        </tr>`;
+            <div class="my-task-actions">
+              <div class="action-btns">
+                <button type="button" class="status-btn ${statusClass === 'status-red' ? 'status-btn-red' : statusClass === 'status-orange' ? 'status-btn-yellow' : 'status-btn-green'} dashboard-task-status-btn" data-id="${task.id}" title="Status ändern">
+                  ${dashboardStatuses[task.status] || 'O'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
       }).join('');
 
       document.querySelectorAll('.dashboard-task-status-btn').forEach(button => {

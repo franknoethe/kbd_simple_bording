@@ -294,9 +294,12 @@ def assign_tasks(data):
 
         cursor.execute(
             """
-            SELECT templates.name AS template_name, process_types.name AS process_type_name
+            SELECT templates.name AS template_name, process_types.name AS process_type_name,
+                   jobs.name AS job_name, locations.name AS location_name
             FROM templates
             LEFT JOIN process_types ON process_types.id = templates.process_type_id
+            LEFT JOIN jobs ON jobs.id = templates.job_id
+            LEFT JOIN locations ON locations.id = templates.location_id
             WHERE templates.id = %s
         """,
             (template_id,),
@@ -309,6 +312,21 @@ def assign_tasks(data):
                 employee["name"] or "",
             ]
         )
+        placeholder_values = {
+            "[NEWBIE]": employee["name"] or "",
+            "[JOB]": template_info.get("job_name") or "",
+            "[STARTDATE]": entry_date.isoformat(),
+            "[STARTDATUM]": entry_date.isoformat(),
+            "[LOCATION]": template_info.get("location_name") or "",
+            "[STANDORT]": template_info.get("location_name") or "",
+        }
+
+        def _apply_placeholders(text):
+            if not text:
+                return text
+            for keyword, value in placeholder_values.items():
+                text = text.replace(keyword, value)
+            return text
 
         for template_task in template_tasks:
             due_date = entry_date - timedelta(
@@ -331,8 +349,8 @@ def assign_tasks(data):
                     template_task["responsible_name"],
                     responsible_employee_id,
                     template_task["id"],
-                    template_task["title"],
-                    template_task["description"],
+                    _apply_placeholders(template_task["title"]),
+                    _apply_placeholders(template_task["description"]),
                     due_date,
                     template_task["email_template_id"],
                 ),

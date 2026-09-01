@@ -18,7 +18,7 @@
   </div>
   <div id="task-message" class="form-message"></div>
   <div class="table-wrap">
-    <table>
+    <table id="tasks-table" class="tasks-table">
       <thead>
         <tr>
           <th>
@@ -52,20 +52,35 @@
               <button class="sort-btn" data-sort="theme" data-direction="desc" type="button">↓</button>
             </span>
           </th>
-          <th>
+          <th class="task-collapsible-col task-col-employee" data-col="employee">
+            <div class="task-col-header">
+              <span class="task-col-label">Mitarbeiter</span>
+              <button class="task-col-toggle" data-col="employee" type="button" aria-label="Spalte einklappen" title="Spalte ein-/ausklappen">&lt;</button>
+            </div>
             <div class="task-filter">
               <input data-field="employee" placeholder="Mitarbeiter suchen" autocomplete="off">
               <button type="button" class="task-filter-clear is-hidden" data-clear="employee" title="Suche zurücksetzen" aria-label="Suche zurücksetzen">&times;</button>
               <div class="task-suggestions is-hidden"></div>
             </div>
             <span class="sortable-heading">
-              Mitarbeiter
               <button class="sort-btn" data-sort="employee" data-direction="asc" type="button">↑</button>
               <button class="sort-btn" data-sort="employee" data-direction="desc" type="button">↓</button>
             </span>
           </th>
-          <th>
-            Vorlage
+          <th class="task-collapsible-col task-col-template" data-col="template">
+            <div class="task-col-header">
+              <span class="task-col-label">Vorlage</span>
+              <button class="task-col-toggle" data-col="template" type="button" aria-label="Spalte einklappen" title="Spalte ein-/ausklappen">&lt;</button>
+            </div>
+            <div class="task-filter">
+              <input data-field="template" placeholder="Vorlage suchen" autocomplete="off">
+              <button type="button" class="task-filter-clear is-hidden" data-clear="template" title="Suche zurücksetzen" aria-label="Suche zurücksetzen">&times;</button>
+              <div class="task-suggestions is-hidden"></div>
+            </div>
+            <span class="sortable-heading">
+              <button class="sort-btn" data-sort="template" data-direction="asc" type="button">↑</button>
+              <button class="sort-btn" data-sort="template" data-direction="desc" type="button">↓</button>
+            </span>
           </th>
           <th>Titel</th>
           <th>Beschreibung</th>
@@ -258,9 +273,31 @@
 
   let taskPage = 1;
   let taskTotalPages = 1;
-  let taskSort = 'due_date';
+  let taskSort = 'term';
   let taskDirection = 'asc';
   const taskFilters = { theme: '', term: '', employee: '', template: '', due_date: '', created_at: '' };
+  const taskColumnState = { employee: true, template: true };
+
+  function updateTaskColumnButtons() {
+    const table = document.getElementById('tasks-table');
+    if (!table) return;
+    table.dataset.employeeCol = taskColumnState.employee ? 'collapsed' : 'expanded';
+    table.dataset.templateCol = taskColumnState.template ? 'collapsed' : 'expanded';
+
+    document.querySelectorAll('.task-col-toggle').forEach(button => {
+      const isCollapsed = taskColumnState[button.dataset.col];
+      button.textContent = isCollapsed ? '>' : '<';
+      button.setAttribute('aria-label', isCollapsed ? 'Spalte ausklappen' : 'Spalte einklappen');
+    });
+  }
+
+  function updateSortButtons() {
+    document.querySelectorAll('.sort-btn').forEach(button => {
+      const isActive = button.dataset.sort === taskSort && button.dataset.direction === taskDirection;
+      button.classList.toggle('sort-btn-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
 
   document.getElementById('task-page-info').textContent = '';
 
@@ -290,8 +327,8 @@
             <td>${task.id}</td>
             <td>${escapeHtml(task.term || '')}</td>
             <td>${escapeHtml(task.theme || '')}</td>
-            <td>${escapeHtml(task.employee_name)}</td>
-            <td>${escapeHtml(task.template_task_title)}</td>
+            <td class="task-col-employee">${escapeHtml(task.employee_name)}</td>
+            <td class="task-col-template">${escapeHtml(task.template_task_title)}</td>
             <td>${escapeHtml(task.title)}</td>
             <td>${escapeHtml(task.description)}</td>
             <td>${escapeHtml(task.due_date || '')}</td>
@@ -467,9 +504,21 @@
       taskSort = button.dataset.sort;
       taskDirection = button.dataset.direction;
       taskPage = 1;
+      updateSortButtons();
       loadTasks();
     });
   });
+
+  document.querySelectorAll('.task-col-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.col;
+      taskColumnState[key] = !taskColumnState[key];
+      updateTaskColumnButtons();
+    });
+  });
+
+  updateSortButtons();
+  updateTaskColumnButtons();
 
   document.querySelectorAll('.task-filter input').forEach(input => {
     input.addEventListener('input', () => loadSuggestions(input));

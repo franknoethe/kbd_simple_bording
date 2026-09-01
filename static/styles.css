@@ -281,12 +281,22 @@ h1, h2 {
   border-radius: 18px;
   padding: 18px;
 }
+.panel.dashboard-tasks {
+  background: unset;
+  border: unset;
+  border-radius: unset;
+  padding: 80px 18px 18px 18px;
+}
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.panel-header.dashboard-tasks {
+  margin-bottom: 30px;
 }
 
 .panel-header span {
@@ -410,6 +420,68 @@ th.th-action {
   border-color: var(--kbd-orange);
   background: var(--kbd-orange-soft);
   color: var(--kbd-orange);
+}
+
+.task-collapsible-col {
+  width: 170px;
+  min-width: 170px;
+  max-width: 170px;
+  transition: width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease;
+}
+
+.task-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-col-label {
+  white-space: nowrap;
+}
+
+.task-col-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-col-toggle:hover {
+  border-color: var(--kbd-orange);
+  background: var(--kbd-orange-soft);
+  color: var(--kbd-orange);
+}
+
+.tasks-table[data-employee-col="collapsed"] .task-col-employee,
+.tasks-table[data-template-col="collapsed"] .task-col-template {
+  width: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+}
+
+.tasks-table[data-employee-col="collapsed"] .task-col-employee .task-col-label,
+.tasks-table[data-employee-col="collapsed"] .task-col-employee .task-filter,
+.tasks-table[data-employee-col="collapsed"] .task-col-employee .sortable-heading,
+.tasks-table[data-template-col="collapsed"] .task-col-template .task-col-label,
+.tasks-table[data-template-col="collapsed"] .task-col-template .task-filter,
+.tasks-table[data-template-col="collapsed"] .task-col-template .sortable-heading {
+  display: none !important;
+}
+
+.tasks-table[data-employee-col="collapsed"] td.task-col-employee,
+.tasks-table[data-template-col="collapsed"] td.task-col-template {
+  background-color: var(--bg) !important;
+  color: transparent;
 }
 
 .col-username {
@@ -827,6 +899,8 @@ th.th-action {
 }
 
 .status-btn {
+  /*width: 32px;
+  height: 32px;*/
   border: 0;
   border-radius: 999px;
   padding: 9px 10px;
@@ -835,6 +909,11 @@ th.th-action {
   font-weight: 700;
   color: #fff;
   cursor: pointer;
+}
+
+.status-btn.dashboard-task-status-btn {
+  width: 32px;
+  height: 32px;
 }
 
 .status-btn-red { background: var(--red); }
@@ -989,6 +1068,84 @@ th.th-action {
   flex-wrap: wrap;
   justify-content: right;
   gap: 8px;
+}
+
+.dashboard-task-list {
+  display: grid;
+  gap: 14px;
+}
+
+.my-task-main {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(220px, 1fr) 50px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+}
+
+.my-task-theme {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.my-task-description {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.my-task-description-header {
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.my-task-description-description {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.my-task-status {
+  display: flex;
+  justify-content: center;
+}
+
+.my-task-status-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28);
+}
+
+.my-task-status-badge.status-green {
+  background: var(--kbd-hellgruen);
+}
+
+.my-task-status-badge.status-orange {
+  background: var(--kbd-gelb);
+  color: var(--text);
+}
+
+.my-task-status-badge.status-red {
+  background: var(--red);
+}
+
+.my-task-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /*.edit-btn,
