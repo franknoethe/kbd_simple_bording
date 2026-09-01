@@ -79,7 +79,7 @@
       <main class="main-content">
         <div class="account-bar">
           <span>{{ session.user.name }} · {{ session.user.role }}</span>
-          <form method="post" action="{{ url_for('logout') }}">
+          <form method="post" action="{{ url_for('auth.logout') }}">
             <button class="logout-btn" type="submit">Abmelden</button>
           </form>
         </div>

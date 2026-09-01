@@ -1,3 +1,6 @@
+**********************************************************
+ //* Neue Struktur
+*********************************************************
 Refaktoriere diese Flask-Datei in ein professionelles Flask-Projekt mit Blueprints.
 
 Aktuell befinden sich alle Routen in einer Datei.
@@ -16,6 +19,17 @@ Verändere keine Rückgabeformate.
 
 Erzeuge die komplette neue Verzeichnisstruktur und zeige für jede neue Datei den Inhalt.
 ``
+
+**********************************************************
+Frontend:
+    Next.js
+
+Backend:
+    FastAPI
+
+Datenbank:
+    MariaDB
+**********************************************************
 
 
 **********************************************************
@@ -256,6 +270,12 @@ Jeder MITARBEITER soll in der Aufgabenliste optisch durch Kontainer <div> getren
 In der tasks E-Mail-Vorschau wird entweder task-mail-html oder task-mail-text abhängig von den einträgen in email_template_id angezeigt.
 
 Speichern mit Zuweisen und task-mode-toggle "on": schaue in templates welche process_type_id die gewählte Vorlage besitz und und trage ins die tasks.term = "templates.process_type_id(aufgelöst) | Combobox.Vorlage.text | Combobox.Mitarbeiter.text" ein
+
+Speichern mit Zuweisen und task-mode-toggle "on": ist die function aus template_tasks.responsible_function_id = Newbie wird tasks.employee_id = combobox.Mitarbeiter.id
+
+
+
+
 
 Aus den Feldern des entsprechen email_templates.body_text oder email_templates.body_html werden die Schlüsselwörter ersetzt: 
 [NEWBIE]=employee.id->emplyees.first_name " " employees.last_name, 
